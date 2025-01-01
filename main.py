@@ -51,27 +51,22 @@ def read_data_from_file():
                 subSystemTask.append(line)
             allsubSystemTasks.append(subSystemTask)
 
-def handle_subSystem1():
-    wait_queue = list()
-    ready_queue = list()
-    
-    thread1 = threading.Thread(target=handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0]))
-    # near future
-    thread2 = threading.Thread(target=handle_subSystem2, args=(allsubSystemResourses[1], allsubSystemTasks[1]))
-    thread3 = threading.Thread(target=handle_subSystem3, args=(allsubSystemResourses[2], allsubSystemTasks[2]))
-    thread4 = threading.Thread(target=handle_subSystem4, args=(allsubSystemResourses[3], allsubSystemTasks[3]))
-
-    # Wait for all threads to complete
-    thread1.join()
-    thread2.join()
-    thread3.join()
-    thread4.join()
-
-
 # near future...
 def handle_subSystem1(resources, tasks):
     wait_queue = list()
-    ready_queue = list()
+    max_priority_queue = tasks[0]
+    mid_priority_queue = tasks[1]
+    min_priority_queue = tasks[2]
+
+    # near future
+    # threadCore1 = threading.Thread(target=handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0]))
+    # threadCore2 = threading.Thread(target=handle_subSystem2, args=(allsubSystemResourses[1], allsubSystemTasks[1]))
+    # threadCore3 = threading.Thread(target=handle_subSystem3, args=(allsubSystemResourses[2], allsubSystemTasks[2]))
+
+    # # Wait for all threads to complete
+    # threadCore1.join()
+    # threadCore2.join()
+    # threadCore3.join()
 
 
 def handle_subSystem2(resources, tasks):
