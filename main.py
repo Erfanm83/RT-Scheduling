@@ -110,18 +110,18 @@ def handle_subSystem1(resources, tasks):
     cur_time = 0
     total_bt = sum([p.burst_time for p in jobs])
     rem_bt = total_bt
-    wait_queue = []
+    queue = []
 
     while rem_bt > 0:
         for job in jobs:
-            if job.arrival_time <= cur_time and job not in wait_queue and job.remain_time > 0:
-                wait_queue.append(job)
+            if job.arrival_time <= cur_time and job not in queue and job.remain_time > 0:
+                queue.append(job)
 
-        if len(wait_queue) == 0:
+        if len(queue) == 0:
             cur_time += 1
             continue
 
-        next_job = wait_queue.pop(0)
+        next_job = queue.pop(0)
         if next_job.remain_time > quantum:
             cur_time += quantum
             next_job.remain_time -= quantum
@@ -135,8 +135,8 @@ def handle_subSystem1(resources, tasks):
             print(next_job)
 
         for job in jobs:
-            if job.remain_time > 0 and job.arrival_time <= cur_time and job not in wait_queue and job != next_job:
-                wait_queue.append(job)
+            if job.remain_time > 0 and job.arrival_time <= cur_time and job not in queue and job != next_job:
+                queue.append(job)
 
         # print("rem_bt = " , rem_bt)
 
