@@ -1,0 +1,59 @@
+Time = 1
+
+Sub1:
+
+    Resourses: R1:  R2: 
+    Waiting Queue: []
+    Core1:
+        Running Rask: T11
+        Ready Queue: []
+    Core2:
+
+        Running Rask: T12
+        Ready Queue: []
+
+    Core3:
+
+        Running Rask: T12
+        Ready Queue: []
+
+Sub*
+....
+
+
+
+
+---------------------------------------------------------------------
+Time = 2
+
+Sub1:
+
+    Resourses: R1:  R2: 
+    Waiting Queue: []
+    Core1:
+        Running Rask: T11
+        Ready Queue: []
+    Core2:
+
+        Running Rask: T12
+        Ready Queue: []
+
+    Core3:
+
+        Running Rask: T12
+        Ready Queue: []
+
+Sub*
+....
+
+
+
+
+---------------------------------------------------------------------
+
+.
+.
+.
+.
+.
+---------------------------------------------------------------------
