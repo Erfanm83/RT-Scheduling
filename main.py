@@ -52,7 +52,8 @@ def read_data_from_file():
             allsubSystemTasks.append(subSystemTask)
 
 class Job:
-    def __init__(self, name, burst_time, resourse1, resourse2, arrival_time, CPU_dest):
+    def __init__(self, id ,name, burst_time, resourse1, resourse2, arrival_time, CPU_dest):
+        self.id = id
         self.name = name
         self.burst_time = burst_time
         self.resourse1 = resourse1
@@ -70,8 +71,8 @@ class Job:
 
     def __str__(self):
         return f""" Job properties:
-        {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"CPU Dest":^10} | {"priority":^10} | {"quantum":^10} | {"state":^10} |
-        {self.name:^10} | {self.burst_time:^10} | {self.resourse1:^10} | {self.resourse2:^10} | {self.arrival_time:^12} | {self.CPU_dest:^10} | {self.priority:^10} | {self.quantum:^10} | {self.state:^10} |"""
+        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"CPU Dest":^10} | {"priority":^10} | {"quantum":^10} | {"state":^10} |
+        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resourse1:^10} | {self.resourse2:^10} | {self.arrival_time:^12} | {self.CPU_dest:^10} | {self.priority:^10} | {self.quantum:^10} | {self.state:^10} |"""
 
 # near future...
 def handle_subSystem1(resources, tasks):
@@ -97,14 +98,18 @@ def handle_subSystem1(resources, tasks):
     jobs1 = []
     jobs2 = []
     jobs3 = []
+    id = 0
     for item in core1_queue:
-        jobs1.append(Job(item[0],item[1],item[2],item[3],item[4],item[5]))
-
+        jobs1.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        id += 1
+    id = 0
     for item in core2_queue:
-        jobs2.append(Job(item[0],item[1],item[2],item[3],item[4],item[5]))
-    
+        jobs2.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        id += 1
+    id = 0
     for item in core3_queue:
-        jobs3.append(Job(item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs3.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        id += 1
 
     # for debug
     # print_debug(jobs1)
@@ -112,9 +117,9 @@ def handle_subSystem1(resources, tasks):
     # print_debug(jobs3)
     
     # scheduling using round robin algorithm for each core
+    weighted_round_robin(jobs1)
     weighted_round_robin(jobs2)
-    # weighted_round_robin(jobs2)
-    # weighted_round_robin(jobs3)
+    weighted_round_robin(jobs3)
 
     # check resources for three tasks selected from WRR
     # selected_job = Job() # temp
