@@ -227,7 +227,6 @@ def weighted_round_robin(job_list):
 
     return schedule
 
-
 def prioritize(job_list, division_factor):
     sorted_job_list = sorted(job_list, key=lambda job: (-int(job.burst_time), int(job.arrival_time)))
 
