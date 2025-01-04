@@ -52,34 +52,26 @@ def read_data_from_file():
             allsubSystemTasks.append(subSystemTask)
 
 class Job:
-    def __init__(self, arrival_time, burst_time):
-        self.arrival_time = arrival_time
+    def __init__(self, name, burst_time, resourse1, resourse2, arrival_time, CPU_dest):
+        self.name = name
         self.burst_time = burst_time
+        self.resourse1 = resourse1
+        self.resourse2 = resourse2
+        self.arrival_time = arrival_time
+        self.CPU_dest = CPU_dest
         self.remain_time = burst_time
         self.current_time = 0
         self.total_arrival_time = 0
         self.wait_time = 0
-        self.proirity = 0
+        self.arrival_wait_time = 0
+        self.priority = 0
         self.quantum = 0
-        self.State = "Running or Waiting or Ready"
+        self.state = "Ready" # can be "Running" or "Waiting" or "Ready"  
 
     def __str__(self):
-        return f"{self.arrival_time}\t\t{self.burst_time}"
-
-    # def __str__(self):
-    #     return f"{self.current_time}\t\t{self.total_arrival_time}\t\t\t{self.wait_time}"
-
-# class Task_sub1:
-#     def __init__(self, name, burst_time, resourse1, resourse2, arrival_time, CPU_dest):
-#         self.name = name
-#         self.burst_time = burst_time
-#         self.resourse1 = resourse1
-#         self.resourse2 = resourse2
-#         self.arrival_time = arrival_time
-#         self.CPU_dest = CPU_dest
-
-#     def __str__(self):
-#         return f"{self.name}\t\t{self.burst_time}\t\t{self.resourse1}\t\t{self.resourse2}\t\t{self.arrival_time}\t\t{self.CPU_dest}\t\t"
+        return f""" Job properties:
+        {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"CPU Dest":^10} | {"priority":^10} | {"quantum":^10} | {"state":^10} |
+        {self.name:^10} | {self.burst_time:^10} | {self.resourse1:^10} | {self.resourse2:^10} | {self.arrival_time:^12} | {self.CPU_dest:^10} | {self.priority:^10} | {self.quantum:^10} | {self.state:^10} |"""
 
 # near future...
 def handle_subSystem1(resources, tasks):
@@ -106,44 +98,42 @@ def handle_subSystem1(resources, tasks):
     jobs2 = []
     jobs3 = []
     for item in core1_queue:
-        jobs1.append(Job(item[1] , item[4]))
+        jobs1.append(Job(item[0],item[1],item[2],item[3],item[4],item[5]))
 
     for item in core2_queue:
-        jobs2.append(Job(item[1] , item[4]))
+        jobs2.append(Job(item[0],item[1],item[2],item[3],item[4],item[5]))
     
     for item in core3_queue:
-        jobs3.append(Job(item[1] , item[4]))
+        jobs3.append(Job(item[0],item[1],item[2],item[3],item[4],item[5]))
 
-    # for i in range(len(jobs1)):
-    #     print(jobs1[i])
-    # for i in range(len(jobs2)):
-    #     print(jobs2[i])
-    # for i in range(len(jobs3)):
-    #     print(jobs3[i])
+    # for debug
+    # print_debug(jobs1)
+    # print_debug(jobs2)
+    # print_debug(jobs3)
     
     # scheduling using round robin algorithm for each core
-    weighted_round_robin(jobs1)
     weighted_round_robin(jobs2)
-    weighted_round_robin(jobs3)
+    # weighted_round_robin(jobs2)
+    # weighted_round_robin(jobs3)
 
     # check resources for three tasks selected from WRR
-    selected_job = Job() # temp
-    result = check_resource(resources[0] , resources[1] , selected_job)
+    # selected_job = Job() # temp
+    # result = check_resource(resources[0] , resources[1] , selected_job)
 
-    core = list()
-    if result == True:
-        threadCore1 = threading.Thread(target=execute_task, args=(core, selected_job))
-        threadCore2 = threading.Thread(target=execute_task, args=(core, selected_job))
-        threadCore3 = threading.Thread(target=execute_task, args=(core, selected_job))
+    # core = list()
+    # if result == True:
+    #     threadCore1 = threading.Thread(target=execute_task, args=(core, selected_job))
+    #     threadCore2 = threading.Thread(target=execute_task, args=(core, selected_job))
+    #     threadCore3 = threading.Thread(target=execute_task, args=(core, selected_job))
 
-        # Wait for all threads to complete
-        # threadCore1.join()
-        # threadCore2.join()
-        # threadCore3.join()
-    else:
-        wait_queue.append(selected_job)
-        waited_job = wait_queue_algorithm()
-        load_balancing(waited_job)
+    #     # Wait for all threads to complete
+    #     # threadCore1.join()
+    #     # threadCore2.join()
+    #     # threadCore3.join()
+    # else:
+    #     wait_queue.append(selected_job)
+    #     waited_job = wait_queue_algorithm()
+    #     load_balancing(waited_job)
 
 def handle_subsystem2(resources, tasks):
     print("Handling Subsystem 2")
@@ -165,7 +155,7 @@ def handle_subsystem3(resources, tasks):
             print(f"Executing Task: {task.name}")
             execute_task(task)
 
-def weighted_round_robin(core):
+def weighted_round_robin(job_list):
     ''' 
     Input :
     def weighted_round_robin(jobList , quantum, core_ready_queue, wait_queue)
@@ -192,10 +182,20 @@ def weighted_round_robin(core):
         2. Time Schedules = [1, 3, 5, 7, 8, 10, 12, 13, 15, 16, 17]
         a list of times indicated the time which we should switch contex from a process to anther process
     '''
-    pass
+    prioritize(job_list)
 
-def prioritize():
-    pass
+def prioritize(job_list):
+    sorted_job_list = sorted(job_list, key=lambda job: (-int(job.burst_time), int(job.arrival_time)))
+
+    priority = 1
+    # calculate quantum for each job
+    for job in sorted_job_list:
+        job.priority = priority
+        quantum = calculate_quantum(priority)
+        job.quantum = quantum
+        priority += 1
+
+    # print_debug(sorted_job_list)
 
 def check_resource(R1 , R2, task):
     '''
@@ -227,6 +227,10 @@ def load_balancing():
     determine which core to put task
     '''
     pass
+
+def print_debug(jobList):
+    for i in range(len(jobList)):
+        print(jobList[i])
 
 if __name__ == "__main__":
     main()
