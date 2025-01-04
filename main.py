@@ -191,6 +191,43 @@ def weighted_round_robin(job_list):
     '''
     prioritize(job_list, 2)
 
+    schedule = []
+
+
+    # Current system time
+    current_time = 0
+
+    # List of remaining tasks
+    remaining_jobs = [job for job in job_list]
+
+    # Continue until all tasks are finished
+    while remaining_jobs:
+        executed = False  # To check if a job has been completed
+
+        for job in remaining_jobs[:]:  # Make a copy to prevent concurrent changes
+            if job.arrival_time <= current_time:
+                # How long this job can run
+                time_slice = min(job.quantum, job.burst_time)
+
+                # Record the start time and the job being executed
+                schedule.append((current_time, job.id))
+
+                # Update the current time and remaining burst time
+                current_time += time_slice
+                job.burst_time -= time_slice
+                executed = True
+
+                # If the job has finished, remove it from the list
+                if job.burst_time <= 0:
+                    remaining_jobs.remove(job)
+
+        if not executed:
+            # If no job was executed, advance the time to the next arrival_time
+            current_time = min(job.arrival_time for job in remaining_jobs if job.arrival_time > current_time)
+
+    return schedule
+
+
 def prioritize(job_list, division_factor):
     sorted_job_list = sorted(job_list, key=lambda job: (-int(job.burst_time), int(job.arrival_time)))
 
