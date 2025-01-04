@@ -160,15 +160,15 @@ def weighted_round_robin(job_list):
     Input :
     def weighted_round_robin(jobList , quantum, core_ready_queue, wait_queue)
 
-    jobList :
-    [
-        Job(1, 3),
-        Job(1, 5),
-        Job(5, 3),
-        Job(5, 1),
-        Job(6, 2),
-        Job(7, 3)
-    ]
+    Job properties:
+           name    | burst time | resource1  | resource2  | arrival time |  CPU Dest  |  priority  |  quantum   |   state    |
+           T12     |    100     |     0      |     1      |      0       |     2      |     1      |     50     |   Ready    |
+    Job properties:
+           name    | burst time | resource1  | resource2  | arrival time |  CPU Dest  |  priority  |  quantum   |   state    |
+           T12     |     20     |     5      |     0      |      0       |     2      |     2      |     10     |   Ready    |
+    Job properties:
+           name    | burst time | resource1  | resource2  | arrival time |  CPU Dest  |  priority  |  quantum   |   state    |
+           T12     |     5      |     6      |     0      |      0       |     2      |     3      |     2      |   Ready    |
 
     prioritize(inputList)
     calculating quantum based on priority and assign value to attributes Job.priority & Job.quantum
