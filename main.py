@@ -182,20 +182,21 @@ def weighted_round_robin(job_list):
         2. Time Schedules = [1, 3, 5, 7, 8, 10, 12, 13, 15, 16, 17]
         a list of times indicated the time which we should switch contex from a process to anther process
     '''
-    prioritize(job_list)
+    prioritize(job_list, 2)
 
-def prioritize(job_list):
+def prioritize(job_list, division_factor):
     sorted_job_list = sorted(job_list, key=lambda job: (-int(job.burst_time), int(job.arrival_time)))
 
     priority = 1
+    first_quantum = int(sorted_job_list[0].burst_time)
+    quantum =  first_quantum // division_factor
     # calculate quantum for each job
     for job in sorted_job_list:
         job.priority = priority
-        quantum = calculate_quantum(priority)
-        job.quantum = quantum
+        job.quantum = (int(job.burst_time) * quantum) // first_quantum
         priority += 1
 
-    # print_debug(sorted_job_list)
+    print_debug(sorted_job_list)
 
 def check_resource(R1 , R2, task):
     '''
