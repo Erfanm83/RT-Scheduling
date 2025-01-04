@@ -1,59 +1,78 @@
-Time = 1
+Time = 50
 
 Sub1:
 
-    Resourses: R1:  R2: 
+    Resources: R1: 3  R2: 2
     Waiting Queue: []
-    Core1:
-        Running Rask: T11
-        Ready Queue: []
     Core2:
+        Running Task: ('T12', 0)
+        Ready Queue: [('T12', 1), ('T12', 2)]
 
-        Running Rask: T12
-        Ready Queue: []
-
-    Core3:
-
-        Running Rask: T12
-        Ready Queue: []
-
-Sub*
-....
-
-
-
-
----------------------------------------------------------------------
-Time = 2
+----------------------------------------------------------------------
+Time = 50
 
 Sub1:
 
-    Resourses: R1:  R2: 
-    Waiting Queue: []
-    Core1:
-        Running Rask: T11
-        Ready Queue: []
+    Resources: R1: 3  R2: 2
+    Waiting Queue: [('T12', 1)]
     Core2:
+        Running Task: ('T12', 0)
+        Ready Queue: [('T12', 2)]
 
-        Running Rask: T12
+----------------------------------------------------------------------
+Time = 50
+
+Sub1:
+
+    Resources: R1: 3  R2: 2
+    Waiting Queue: [('T12', 1), ('T12', 2)]
+    Core2:
+        Running Task: ('T12', 0)
         Ready Queue: []
 
-    Core3:
+----------------------------------------------------------------------
+Time = 50
 
-        Running Rask: T12
+Sub1:
+
+    Resources: R1: 3  R2: 2
+    Waiting Queue: [('T12', 1), ('T12', 2), ('T12', 0)]
+    Core2:
+        Running Task: None
         Ready Queue: []
 
-Sub*
-....
+----------------------------------------------------------------------
+Time = 50
+
+Sub1:
+
+    Resources: R1: 3  R2: 2
+    Waiting Queue: [('T12', 1), ('T12', 2), ('T12', 0), ('T12', 1)]
+    Core2:
+        Running Task: None
+        Ready Queue: []
+
+----------------------------------------------------------------------
+Time = 50
+
+Sub1:
+
+    Resources: R1: 3  R2: 2
+    Waiting Queue: [('T12', 1), ('T12', 2), ('T12', 0), ('T12', 1), ('T12', 2)]
+    Core2:
+        Running Task: None
+        Ready Queue: []
+
+----------------------------------------------------------------------
+Time = 50
+
+Sub1:
+
+    Resources: R1: 3  R2: 2
+    Waiting Queue: [('T12', 1), ('T12', 2), ('T12', 0), ('T12', 1), ('T12', 2), ('T12', 2)]
+    Core2:
+        Running Task: None
+        Ready Queue: []
 
 
-
-
----------------------------------------------------------------------
-
-.
-.
-.
-.
-.
----------------------------------------------------------------------
+----------------------------------------------------------------------

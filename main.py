@@ -52,12 +52,12 @@ def read_data_from_file():
             allsubSystemTasks.append(subSystemTask)
 
 class Job:
-    def __init__(self, id ,name, burst_time, resourse1, resourse2, arrival_time, CPU_dest):
+    def __init__(self, id ,name, burst_time, resource1, resource2, arrival_time, CPU_dest):
         self.id = id
         self.name = name
         self.burst_time = burst_time
-        self.resourse1 = resourse1
-        self.resourse2 = resourse2
+        self.resource1 = resource1
+        self.resource2 = resource2
         self.arrival_time = arrival_time
         self.CPU_dest = CPU_dest
         self.remain_time = burst_time
@@ -72,7 +72,7 @@ class Job:
     def __str__(self):
         return f""" Job properties:
         {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"CPU Dest":^10} | {"priority":^10} | {"quantum":^10} | {"state":^10} |
-        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resourse1:^10} | {self.resourse2:^10} | {self.arrival_time:^12} | {self.CPU_dest:^10} | {self.priority:^10} | {self.quantum:^10} | {self.state:^10} |"""
+        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} | {self.arrival_time:^12} | {self.CPU_dest:^10} | {self.priority:^10} | {self.quantum:^10} | {self.state:^10} |"""
 
 # near future...
 def handle_subSystem1(resources, tasks):
@@ -86,29 +86,24 @@ def handle_subSystem1(resources, tasks):
         length = len(t)
         if t[length - 1] == '1':
             core1_queue.append(t.split(' '))
-            # task_core1 = Task_sub1(core1_queue[0], core1_queue[1], core1_queue[2], core1_queue[3], core1_queue[4], core1_queue[5])
         elif t[length - 1] == '2':
             core2_queue.append(t.split(' '))
-            # task_core1 = Task_sub1(core1_queue[0], core1_queue[1], core1_queue[2], core1_queue[3], core1_queue[4], core1_queue[5])
         else:
             core3_queue.append(t.split(' '))
-    # print("core1_queue = " , core1_queue)
-    # print("core2_queue = " , core2_queue)
-    # print("core3_queue = " , core3_queue)
     jobs1 = []
     jobs2 = []
     jobs3 = []
     id = 0
     for item in core1_queue:
-        jobs1.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs1.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
         id += 1
     id = 0
     for item in core2_queue:
-        jobs2.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs2.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
         id += 1
     id = 0
     for item in core3_queue:
-        jobs3.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs3.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
         id += 1
 
     # for debug
@@ -117,13 +112,20 @@ def handle_subSystem1(resources, tasks):
     # print_debug(jobs3)
     
     # scheduling using round robin algorithm for each core
-    weighted_round_robin(jobs1)
-    weighted_round_robin(jobs2)
-    weighted_round_robin(jobs3)
+    wrrList1 = weighted_round_robin(jobs1)
+    wrrList2 = weighted_round_robin(jobs2)
+    wrrList3 = weighted_round_robin(jobs3)
 
     # check resources for three tasks selected from WRR
-    # selected_job = Job() # temp
-    # result = check_resource(resources[0] , resources[1] , selected_job)
+    check_resource(resources[0] , resources[1], wrrList1, jobs1, wait_queue)
+    check_resource(resources[0] , resources[1], wrrList2, jobs2, wait_queue)
+    check_resource(resources[0] , resources[1], wrrList3, jobs3, wait_queue)
+
+    # near future...
+    waited_job = wait_queue_algorithm()
+    load_balancing()
+    # we need to check if there are more tasks in the queue with enough resources
+    # if there are, we can execute them here
 
     # core = list()
     # if result == True:
@@ -198,30 +200,38 @@ def prioritize(job_list, division_factor):
     # calculate quantum for each job
     for job in sorted_job_list:
         job.priority = priority
-        job.quantum = (int(job.burst_time) * quantum) // first_quantum
+        job.quantum = (job.burst_time * quantum) // first_quantum
         priority += 1
 
     print_debug(sorted_job_list)
 
-def check_resource(R1 , R2, task):
+def check_resource(R1 , R2, wrrList, jobList, wait_queue):
     '''
     check whether resources can meet the needs of task or not
 
-    returns boolean
+    if yes, put them to cores and execute the task
+    if no, put them to wait queue
     '''
-    pass
+    while wrrList:
+        popped_item = wrrList.pop(0)
+        process_id = popped_item[1]
+        job_to_process = jobList[process_id]
+        if 0 <= R1 - job_to_process.resource1 and 0 <= R2 - job_to_process.resource2:
+            # we have enough resources, assign it to CPU
+            R1 -= job_to_process.resource1
+            R2 -= job_to_process.resource2
+            job_to_process.state = "Running"
+        else:
+            # we don't have enough resources, put it to wait queue
+            job_to_process.state = "Waiting"
+            wait_queue.append(job_to_process)
+
 
 def execute_task(core, task):
     '''
     execute task on core and print snapShot of system
 
     print_snapshot()
-    '''
-    pass
-
-def print_snapshot():
-    '''
-    prints snapShot of system
     '''
     pass
 
@@ -237,6 +247,22 @@ def load_balancing():
 def print_debug(jobList):
     for i in range(len(jobList)):
         print(jobList[i])
+
+def print_snapshot(current_time, resources, wait_queue, jobs1, jobs2, jobs3):
+    with open("out.txt", "a") as file:
+        file.write(f"Time = {current_time}\n\n")
+        file.write(f"Sub1:\n\n")
+        file.write(f"    Resources: R1: {resources[0]}  R2: {resources[1]}\n")
+        file.write(f"    Waiting Queue: {[(job.name, job.id) for job in wait_queue]}\n")
+
+        for idx, core_jobs in enumerate([jobs1, jobs2, jobs3], start=1):
+            file.write(f"    Core{idx}:\n")
+            running_task = next(((job.name, job.id) for job in core_jobs if job.state == "Running"), None)
+            ready_queue = [(job.name, job.id) for job in core_jobs if job.state == "Ready"]
+            file.write(f"        Running Task: {running_task if running_task else 'None'}\n")
+            file.write(f"        Ready Queue: {ready_queue}\n")
+
+        file.write("\n" + "-" * 70 + "\n")
 
 if __name__ == "__main__":
     main()
