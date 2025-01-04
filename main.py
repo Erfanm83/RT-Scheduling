@@ -100,15 +100,15 @@ def handle_subSystem1(resources, tasks):
     jobs3 = []
     id = 0
     for item in core1_queue:
-        jobs1.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs1.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
         id += 1
     id = 0
     for item in core2_queue:
-        jobs2.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs2.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
         id += 1
     id = 0
     for item in core3_queue:
-        jobs3.append(Job(id , item[0],item[1],item[2],item[3],item[4],item[5]))
+        jobs3.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
         id += 1
 
     # for debug
@@ -117,10 +117,19 @@ def handle_subSystem1(resources, tasks):
     # print_debug(jobs3)
     
     # scheduling using round robin algorithm for each core
-    weighted_round_robin(jobs1)
-    weighted_round_robin(jobs2)
-    weighted_round_robin(jobs3)
+    # print_debug(jobs1)
+    result1 = weighted_round_robin(jobs1)
+    print(result1)
 
+    # print_debug(jobs2)
+    result2 = weighted_round_robin(jobs2)
+    print(result2)
+
+    # print_debug(jobs3)
+    result3 = weighted_round_robin(jobs3)
+    print(result3)
+
+    exit(0)
     # check resources for three tasks selected from WRR
     # selected_job = Job() # temp
     # result = check_resource(resources[0] , resources[1] , selected_job)
@@ -188,6 +197,43 @@ def weighted_round_robin(job_list):
         a list of times indicated the time which we should switch contex from a process to anther process
     '''
     prioritize(job_list, 2)
+
+    schedule = []
+
+
+    # Current system time
+    current_time = 0
+
+    # List of remaining tasks
+    remaining_jobs = [job for job in job_list]
+
+    # Continue until all tasks are finished
+    while remaining_jobs:
+        executed = False  # To check if a job has been completed
+
+        for job in remaining_jobs[:]:  # Make a copy to prevent concurrent changes
+            if job.arrival_time <= current_time:
+                # How long this job can run
+                time_slice = min(job.quantum, job.burst_time)
+
+                # Record the start time and the job being executed
+                schedule.append((current_time, job.id))
+
+                # Update the current time and remaining burst time
+                current_time += time_slice
+                job.burst_time -= time_slice
+                executed = True
+
+                # If the job has finished, remove it from the list
+                if job.burst_time <= 0:
+                    remaining_jobs.remove(job)
+
+        if not executed:
+            # If no job was executed, advance the time to the next arrival_time
+            current_time = min(job.arrival_time for job in remaining_jobs if job.arrival_time > current_time)
+
+    return schedule
+
 
 def prioritize(job_list, division_factor):
     sorted_job_list = sorted(job_list, key=lambda job: (-int(job.burst_time), int(job.arrival_time)))
