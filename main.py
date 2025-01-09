@@ -173,18 +173,18 @@ def handle_subSystem1(resources, tasks):
 
         # Debug: Print core states before load_balancing
         print("\nCore States Before Balancing:")
-        print(f"JobList1: {[job.name for job in JobList1]}")
-        print(f"JobList2: {[job.name for job in JobList2]}")
-        print(f"JobList3: {[job.name for job in JobList3]}")
+        # print(f"JobList1: {[job.name for job in JobList1]}")
+        # print(f"JobList2: {[job.name for job in JobList2]}")
+        # print(f"JobList3: {[job.name for job in JobList3]}")
 
         # Call load_balancing to distribute top three jobs
         load_balancing(top_three, JobList1, JobList2, JobList3)
 
         # Debug: Print core states after load_balancing
-        print("\nCore States After Balancing:")
-        print(f"JobList1: {[job.name for job in JobList1]}")
-        print(f"JobList2: {[job.name for job in JobList2]}")
-        print(f"JobList3: {[job.name for job in JobList3]}")
+        # print("\nCore States After Balancing:")
+        # print(f"JobList1: {[job.name for job in JobList1]}")
+        # print(f"JobList2: {[job.name for job in JobList2]}")
+        # print(f"JobList3: {[job.name for job in JobList3]}")
 
         currTime += 1
 
