@@ -166,12 +166,25 @@ def handle_subSystem1(resources, tasks):
         # calculating the amount of time of each process in wait queue 
         top_three = handle_wait_queue(wait_queue, currTime)
 
-        print("Top Three Jobs:")
-        for job in top_three:
-            print(f"{job.name}: wait_time = {job.wait_time}")
-        
-        # we need to check if there are available space in each core
-        # load_balancing(top_three, JobList1, JobList2, JobList3)
+        # for debug
+        # print("Top Three Jobs:")
+        # for job in top_three:
+        #     print(f"{job.name}: wait_time = {job.wait_time}")
+
+        # Debug: Print core states before load_balancing
+        print("\nCore States Before Balancing:")
+        print(f"JobList1: {[job.name for job in JobList1]}")
+        print(f"JobList2: {[job.name for job in JobList2]}")
+        print(f"JobList3: {[job.name for job in JobList3]}")
+
+        # Call load_balancing to distribute top three jobs
+        load_balancing(top_three, JobList1, JobList2, JobList3)
+
+        # Debug: Print core states after load_balancing
+        print("\nCore States After Balancing:")
+        print(f"JobList1: {[job.name for job in JobList1]}")
+        print(f"JobList2: {[job.name for job in JobList2]}")
+        print(f"JobList3: {[job.name for job in JobList3]}")
 
         currTime += 1
 
@@ -362,7 +375,7 @@ def receive_wait_queue():
 def load_balancing(top_three, jobList1, jobList2, jobList3):
     '''
     Balances the load by assigning jobs from top_three to the core queues
-    based on their free space.
+    in a way that ensures an even distribution of jobs among the cores.
 
     Arguments:
         top_three: List of jobs to be assigned.
@@ -371,31 +384,35 @@ def load_balancing(top_three, jobList1, jobList2, jobList3):
     Returns:
         Updated jobList1, jobList2, jobList3.
     '''
-    free_space = {
-        "jobList1": jobList1.count(None),
-        "jobList2": jobList2.count(None),
-        "jobList3": jobList3.count(None)
+    # Calculate the current load on each core
+    loads = {
+        "jobList1": len([job for job in jobList1 if job is not None]),
+        "jobList2": len([job for job in jobList2 if job is not None]),
+        "jobList3": len([job for job in jobList3 if job is not None]),
     }
 
-    # Sort cores by free space in descending order
-    sorted_cores = sorted(free_space.items(), key=lambda x: x[1], reverse=True)
+    # Sort cores by their current load in ascending order
+    sorted_cores = sorted(loads.items(), key=lambda x: x[1])
 
-    # Distribute jobs to the cores based on priority
+    # Distribute jobs to the cores with the least load
     for job in top_three:
-        for core_name, available_space in sorted_cores:
-            if core_name == "jobList1" and free_space["jobList1"] >= job.wait_time:
-                jobList1.append(job)
-                free_space["jobList1"] -= job.wait_time
-                break
-            elif core_name == "jobList2" and free_space["jobList2"] >= job.wait_time:
-                jobList2.append(job)
-                free_space["jobList2"] -= job.wait_time
-                break
-            elif core_name == "jobList3" and free_space["jobList3"] >= job.wait_time:
-                jobList3.append(job)
-                free_space["jobList3"] -= job.wait_time
-                break
-    
+        # Always pick the core with the least load
+        core_name, _ = sorted_cores[0]
+
+        # Assign the job to the corresponding core and update the load
+        if core_name == "jobList1":
+            jobList1.append(job)
+            loads["jobList1"] += 1
+        elif core_name == "jobList2":
+            jobList2.append(job)
+            loads["jobList2"] += 1
+        elif core_name == "jobList3":
+            jobList3.append(job)
+            loads["jobList3"] += 1
+
+        # Re-sort the cores by their updated load
+        sorted_cores = sorted(loads.items(), key=lambda x: x[1])
+
     return jobList1, jobList2, jobList3
 
 def print_debug(jobList):
