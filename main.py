@@ -171,7 +171,7 @@ def handle_subSystem1(resources, tasks):
             print(f"{job.name}: wait_time = {job.wait_time}")
         
         # we need to check if there are available space in each core
-        load_balancing(top_three, JobList1, JobList2, JobList3)
+        # load_balancing(top_three, JobList1, JobList2, JobList3)
 
         currTime += 1
 
