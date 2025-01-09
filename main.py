@@ -173,51 +173,51 @@ def handle_subSystem1(resources, tasks):
     currTime = 0
 
     # Main loop
-    while True:
-        # Read the wait queue
-        wait_queue = receive_wait_queue()
+# while True:
+    # Read the wait queue
+    wait_queue = receive_wait_queue()
 
-        # calculating the amount of time of each process in wait queue 
-        top_three = handle_wait_queue(wait_queue, currTime)
+    # calculating the amount of time of each process in wait queue 
+    top_three = handle_wait_queue(wait_queue, currTime)
 
-        # for debug
-        # print("Top Three Jobs:")
-        # for job in top_three:
-        #     print(f"{job.name}: wait_time = {job.wait_time}")
+    # for debug
+    # print("Top Three Jobs:")
+    # for job in top_three:
+    #     print(f"{job.name}: wait_time = {job.wait_time}")
 
-        # Debug: Print core states before load_balancing
-        # print("\nCore States Before Balancing:")‍
-        # print(f"JobList1: {[job.name for job in JobList1]}")
-        # print(f"JobList2: {[job.name for job in JobList2]}")
-        # print(f"JobList3: {[job.name for job in JobList3]}")
+    # Debug: Print core states before load_balancing‍
+    # print("Core States Before Balancing:")
+    # print(f"JobList1: {[job.name for job in JobList1]}")
+    # print(f"JobList2: {[job.name for job in JobList2]}")
+    # print(f"JobList3: {[job.name for job in JobList3]}")
 
-        # Distribute the jobs to cores
-        JobList1 = receive_jobList("jobList1")
-        JobList2 = receive_jobList("jobList2")
-        JobList3 = receive_jobList("jobList3")
-        load_balancing(top_three, JobList1, JobList2, JobList3)
+    # Distribute the jobs to cores
+    JobList1 = receive_jobList("jobList1")
+    JobList2 = receive_jobList("jobList2")
+    JobList3 = receive_jobList("jobList3")
+    load_balancing(top_three, JobList1, JobList2, JobList3)
 
-        # Write updated job lists back to the file
-        write_job_list("jobList1", JobList1)
-        write_job_list("jobList2", JobList2)
-        write_job_list("jobList3", JobList3)
+    # Write updated job lists back to the file
+    write_job_list("jobList1", JobList1)
+    write_job_list("jobList2", JobList2)
+    write_job_list("jobList3", JobList3)
 
-        # Write updated wait queue back to the file
-        write_wait_queue(wait_queue)
+    # Write updated wait queue back to the file
+    write_wait_queue(wait_queue)
 
-        # Debug: Print core states after load_balancing
-        # print("\nCore States After Balancing:")
-        # print(f"JobList1: {[job.name for job in JobList1]}")
-        # print(f"JobList2: {[job.name for job in JobList2]}")
-        # print(f"JobList3: {[job.name for job in JobList3]}")
+    # Debug: Print core states after load_balancing
+    # print("\nCore States After Balancing:")
+    # print(f"JobList1: {[job.name for job in JobList1]}")
+    # print(f"JobList2: {[job.name for job in JobList2]}")
+    # print(f"JobList3: {[job.name for job in JobList3]}")
 
-        currTime += 1
+    currTime += 1
 
-        # Exit Condition
-        if not (wait_queue):
-            print("Wait queue is empty, exiting from main loop...")
-            # Wait for all threads to complete
-            break
+    # Exit Condition
+    if not (wait_queue):
+        print("Wait queue is empty, exiting from main loop...")
+        # Wait for all threads to complete
+        # break
 
     # Wait for threads to complete
     threadCore1.join()
@@ -343,7 +343,7 @@ def prioritize(job_list, quantum):
     # priority = 1
     # first_quantum = int(sorted_job_list[0].burst_time)
     # quantum =  first_quantum // division_factor
-    # # calculate quantum for each job
+    # calculate quantum for each job
     # for job in sorted_job_list:
     #     job.priority = priority
     #     job.quantum = (job.burst_time * quantum) // first_quantum
@@ -369,6 +369,7 @@ def check_resource(R1 , R2, wrrList, jobList, wait_queue):
             R1 -= job_to_process.resource1
             R2 -= job_to_process.resource2
             job_to_process.state = "Running"
+            # run the task on CPU
         else:
             # we don't have enough resources, put it to wait queue
             job_to_process.state = "Waiting"
@@ -415,25 +416,25 @@ def handle_core(core_name, R1, R2):
     '''
     Handles tasks for a specific core.
     '''
-    while(True):
-        # Read the job list for the core
-        JobList = receive_jobList(core_name)
+    # while(True):
+    # Read the job list for the core
+    JobList = receive_jobList(core_name)
 
-        if not JobList:
-            # Exit if the job list is empty
-            print(f"{core_name} job list is empty, exiting...")
-            break
+    if not JobList:
+        # Exit if the job list is empty
+        print(f"{core_name} job list is empty, exiting...")
+        # break
 
-        # scheduling using round robin algorithm for each core
-        wrrList = weighted_round_robin(JobList)
+    # scheduling using round robin algorithm for each core
+    wrrList = weighted_round_robin(JobList)
 
-        # Check resources and manage wait queue
-        wait_queue = receive_wait_queue()
-        check_resource(R1 , R2, wrrList, JobList, wait_queue)
+    # Check resources and manage wait queue
+    wait_queue = receive_wait_queue()
+    check_resource(R1 , R2, wrrList, JobList, wait_queue)
 
-        # Write updated job list and wait queue back to the file
-        write_job_list(core_name, JobList)
-        write_wait_queue(wait_queue)
+    # Write updated job list and wait queue back to the file
+    write_job_list(core_name, JobList)
+    write_wait_queue(wait_queue)
 
 def receive_wait_queue():
     '''
