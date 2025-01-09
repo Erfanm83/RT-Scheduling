@@ -76,71 +76,113 @@ class Job:
 
 # near future...
 def handle_subSystem1(resources, tasks):
-    wait_queue = list()
-    core1_queue = list()
-    core2_queue = list()
-    core3_queue = list()
+    '''
+    handles SubSystem1 that has 3 ready queues and 1 wait queue
 
-    # creating jobs for each core
+    simulating each core of CPU with a thread
+
+    main thread manages the 3 Threads by receiving wait queue and pours joblists
+
+    each thread schedules and executes processes and then printing them at out.txt 
+    '''
+
+    # fixed size lists
+    wait_queue = [None] * 10
+    core1_queue = [None] * 5
+    core2_queue = [None] * 5
+    core3_queue = [None] * 5
+    i = 0
+    j = 0
+    k = 0
+
+    # splitting core Tasks based on their Core destination
     for t in tasks:
         length = len(t)
         if t[length - 1] == '1':
-            core1_queue.append(t.split(' '))
+            core1_queue[i] = t.split(' ')
+            i += 1
         elif t[length - 1] == '2':
-            core2_queue.append(t.split(' '))
+            core2_queue[j] = t.split(' ')
+            j += 1
         else:
-            core3_queue.append(t.split(' '))
-    jobs1 = []
-    jobs2 = []
-    jobs3 = []
+            core3_queue[k] = t.split(' ')
+            k += 1
+
+    # creating JobList for each core
+    JobList1 = []
+    JobList2 = []
+    JobList3 = []
     id = 0
     for item in core1_queue:
-        jobs1.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
-        id += 1
+        if item != None:
+            JobList1.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
+            id += 1
     id = 0
     for item in core2_queue:
-        jobs2.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
-        id += 1
+        if item != None:
+            JobList2.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
+            id += 1
     id = 0
     for item in core3_queue:
-        jobs3.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
-        id += 1
+        if item != None:
+            JobList3.append(Job(id , item[0],int(item[1]),int(item[2]),int(item[3]),int(item[4]),int(item[5])))
+            id += 1
 
     # for debug
-    # print_debug(jobs1)
-    # print_debug(jobs2)
-    # print_debug(jobs3)
-    
-    # scheduling using round robin algorithm for each core
-    wrrList1 = weighted_round_robin(jobs1)
-    wrrList2 = weighted_round_robin(jobs2)
-    wrrList3 = weighted_round_robin(jobs3)
+    # print_debug(JobList1)
+    # print_debug(JobList2)
+    # print_debug(JobList3)
 
-    # check resources for three tasks selected from WRR
-    check_resource(resources[0] , resources[1], wrrList1, jobs1, wait_queue)
-    check_resource(resources[0] , resources[1], wrrList2, jobs2, wait_queue)
-    check_resource(resources[0] , resources[1], wrrList3, jobs3, wait_queue)
+    # threadCore1 = threading.Thread(target= handle_core, args=(JobList1)).start()
+    # threadCore2 = threading.Thread(target= handle_core, args=(JobList2)).start()
+    # threadCore3 = threading.Thread(target= handle_core, args=(JobList3)).start()
 
-    # near future...
-    waited_job = wait_queue_algorithm()
-    load_balancing()
-    # we need to check if there are more tasks in the queue with enough resources
-    # if there are, we can execute them here
+    # mock data
+    wait_queue = [
+    Job(1, "JobA", 5, 1, 1, 5, 1),
+    Job(2, "JobB", 3, 1, 1, 5, 1),
+    Job(3, "JobC", 2, 1, 1, 5, 1),
+    Job(4, "JobD", 4, 1, 1, 6, 1),
+    Job(5, "JobE", 6, 1, 1, 6, 1),
+    Job(6, "JobF", 9, 1, 1, 7, 1),
+    Job(7, "JobG", 2, 1, 1, 8, 1),
+    Job(8, "JobH", 4, 1, 1, 9, 1),
+    Job(9, "JobI", 8, 1, 1, 10, 1),
+    Job(10, "JobJ", 5, 1, 1, 22, 1)
+    ]
 
-    # core = list()
-    # if result == True:
-    #     threadCore1 = threading.Thread(target=execute_task, args=(core, selected_job))
-    #     threadCore2 = threading.Thread(target=execute_task, args=(core, selected_job))
-    #     threadCore3 = threading.Thread(target=execute_task, args=(core, selected_job))
+    x = 0
+    for j in wait_queue:
+        j.arrival_wait_time = x
+        x += 1
 
-    #     # Wait for all threads to complete
-    #     # threadCore1.join()
-    #     # threadCore2.join()
-    #     # threadCore3.join()
-    # else:
-    #     wait_queue.append(selected_job)
-    #     waited_job = wait_queue_algorithm()
-    #     load_balancing(waited_job)
+    # Example current time
+    currTime = 20
+
+    while True:
+        # receiving wait queue
+        # wait_queue = receive_wait_queue()
+
+        # calculating the amount of time of each process in wait queue 
+        top_three = handle_wait_queue(wait_queue, currTime)
+
+        print("Top Three Jobs:")
+        for job in top_three:
+            print(f"{job.name}: wait_time = {job.wait_time}")
+        
+        # we need to check if there are available space in each core
+        load_balancing(top_three, JobList1, JobList2, JobList3)
+
+        currTime += 1
+
+        # Exit Condition
+        if not (wait_queue):
+            print("Exiting from main loop...")
+            # Wait for all threads to complete
+            # threadCore1.join()
+            # threadCore2.join()
+            # threadCore3.join()
+            break
 
 def handle_subsystem2(resources, tasks):
     print("Handling Subsystem 2")
@@ -198,13 +240,13 @@ def weighted_round_robin(job_list):
     current_time = 0
 
     # List of remaining tasks
-    remaining_jobs = [job for job in job_list]
+    remaining_JobList = [job for job in job_list]
 
     # Continue until all tasks are finished
-    while remaining_jobs:
+    while remaining_JobList:
         executed = False  # To check if a job has been completed
 
-        for job in remaining_jobs[:]:  # Make a copy to prevent concurrent changes
+        for job in remaining_JobList[:]:  # Make a copy to prevent concurrent changes
             if job.arrival_time <= current_time:
                 # How long this job can run
                 time_slice = min(job.quantum, job.burst_time)
@@ -219,11 +261,11 @@ def weighted_round_robin(job_list):
 
                 # If the job has finished, remove it from the list
                 if job.burst_time <= 0:
-                    remaining_jobs.remove(job)
+                    remaining_JobList.remove(job)
 
         if not executed:
             # If no job was executed, advance the time to the next arrival_time
-            current_time = min(job.arrival_time for job in remaining_jobs if job.arrival_time > current_time)
+            current_time = min(job.arrival_time for job in remaining_JobList if job.arrival_time > current_time)
 
     return schedule
 
@@ -245,8 +287,10 @@ def check_resource(R1 , R2, wrrList, jobList, wait_queue):
     '''
     check whether resources can meet the needs of task or not
 
-    if yes, put them to cores and execute the task
-    if no, put them to wait queue
+    if YES, put them to cores and execute the task
+
+    if NO, put them to wait queue
+
     '''
     while wrrList:
         popped_item = wrrList.pop(0)
@@ -262,7 +306,6 @@ def check_resource(R1 , R2, wrrList, jobList, wait_queue):
             job_to_process.state = "Waiting"
             wait_queue.append(job_to_process)
 
-
 def execute_task(core, task):
     '''
     execute task on core and print snapShot of system
@@ -271,30 +314,105 @@ def execute_task(core, task):
     '''
     pass
 
-def wait_queue_algorithm():
+def handle_wait_queue(wait_queue, currTime):
+    '''
+    Implementing a mechanism to avoid starvation by calculating the amount of time waited in the queue
+    and removing the top three processes.
+    '''
+    # Update the wait_time field for each job in the wait_queue
+    for job in wait_queue:
+        if currTime - job.arrival_wait_time > 0:
+            job.wait_time = currTime - job.arrival_wait_time
+        else:
+            job.wait_time = 0
+
+    # Print results
+    # print("Remaining Wait Queue:")
+    # for job in wait_queue:
+    #     print(f"Job {job.name}: wait_time = {job.wait_time}")
+
+    # Sort wait_queue based on wait_time in descending order
+    sorted_queue = sorted(wait_queue, key=lambda item: item.wait_time, reverse=True)
+
+    # Get the top three elements
+    top_three = sorted_queue[:3]
+
+    # Remove these top three elements from the wait_queue
+    for job in top_three:
+        wait_queue.remove(job)
+
+    return top_three
+
+def handle_core(JobList, R1, R2, wait_queue):
+    while(True):
+        # scheduling using round robin algorithm for each core
+        wrrList = weighted_round_robin(JobList)
+
+        # check resources for three tasks selected from WRR
+        check_resource(R1 , R2, wrrList, JobList, wait_queue)
+
+        # Exit Condition
+        if not (wrrList):
+            print("Exiting from core's thread loop...")
+            break
+
+def receive_wait_queue():
     pass
 
-def load_balancing():
+def load_balancing(top_three, jobList1, jobList2, jobList3):
     '''
-    determine which core to put task
+    Balances the load by assigning jobs from top_three to the core queues
+    based on their free space.
+
+    Arguments:
+        top_three: List of jobs to be assigned.
+        jobList1, jobList2, jobList3: Current jobs assigned to each core.
+
+    Returns:
+        Updated jobList1, jobList2, jobList3.
     '''
-    pass
+    free_space = {
+        "jobList1": jobList1.count(None),
+        "jobList2": jobList2.count(None),
+        "jobList3": jobList3.count(None)
+    }
+
+    # Sort cores by free space in descending order
+    sorted_cores = sorted(free_space.items(), key=lambda x: x[1], reverse=True)
+
+    # Distribute jobs to the cores based on priority
+    for job in top_three:
+        for core_name, available_space in sorted_cores:
+            if core_name == "jobList1" and free_space["jobList1"] >= job.wait_time:
+                jobList1.append(job)
+                free_space["jobList1"] -= job.wait_time
+                break
+            elif core_name == "jobList2" and free_space["jobList2"] >= job.wait_time:
+                jobList2.append(job)
+                free_space["jobList2"] -= job.wait_time
+                break
+            elif core_name == "jobList3" and free_space["jobList3"] >= job.wait_time:
+                jobList3.append(job)
+                free_space["jobList3"] -= job.wait_time
+                break
+    
+    return jobList1, jobList2, jobList3
 
 def print_debug(jobList):
     for i in range(len(jobList)):
         print(jobList[i])
 
-def print_snapshot(current_time, resources, wait_queue, jobs1, jobs2, jobs3):
+def print_snapshot(current_time, resources, wait_queue, JobList1, JobList2, JobList3):
     with open("out.txt", "a") as file:
         file.write(f"Time = {current_time}\n\n")
         file.write(f"Sub1:\n\n")
         file.write(f"    Resources: R1: {resources[0]}  R2: {resources[1]}\n")
         file.write(f"    Waiting Queue: {[(job.name, job.id) for job in wait_queue]}\n")
 
-        for idx, core_jobs in enumerate([jobs1, jobs2, jobs3], start=1):
+        for idx, core_JobList in enumerate([JobList1, JobList2, JobList3], start=1):
             file.write(f"    Core{idx}:\n")
-            running_task = next(((job.name, job.id) for job in core_jobs if job.state == "Running"), None)
-            ready_queue = [(job.name, job.id) for job in core_jobs if job.state == "Ready"]
+            running_task = next(((job.name, job.id) for job in core_JobList if job.state == "Running"), None)
+            ready_queue = [(job.name, job.id) for job in core_JobList if job.state == "Ready"]
             file.write(f"        Running Task: {running_task if running_task else 'None'}\n")
             file.write(f"        Ready Queue: {ready_queue}\n")
 
