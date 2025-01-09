@@ -1,8 +1,17 @@
 import threading
 import time
+import json
 
 allsubSystemResourses = []
 allsubSystemTasks = []
+
+# Mutex locks
+wait_queue_lock = threading.Lock()
+job_list_lock = threading.Lock()
+
+# File paths
+wait_queue_file = "wait_queue.json"
+job_list_file = "job_list.json"
 
 def main():
     # print("Subsystem Resources:")
@@ -85,7 +94,6 @@ def handle_subSystem1(resources, tasks):
 
     each thread schedules and executes processes and then printing them at out.txt 
     '''
-
     # fixed size lists
     wait_queue = [None] * 10
     core1_queue = [None] * 5
@@ -133,9 +141,9 @@ def handle_subSystem1(resources, tasks):
     # print_debug(JobList2)
     # print_debug(JobList3)
 
-    # threadCore1 = threading.Thread(target= handle_core, args=(JobList1)).start()
-    # threadCore2 = threading.Thread(target= handle_core, args=(JobList2)).start()
-    # threadCore3 = threading.Thread(target= handle_core, args=(JobList3)).start()
+    threadCore1 = threading.Thread(target= handle_core, args=(JobList1)).start()
+    threadCore2 = threading.Thread(target= handle_core, args=(JobList2)).start()
+    threadCore3 = threading.Thread(target= handle_core, args=(JobList3)).start()
 
     # mock data
     wait_queue = [
@@ -172,7 +180,7 @@ def handle_subSystem1(resources, tasks):
         #     print(f"{job.name}: wait_time = {job.wait_time}")
 
         # Debug: Print core states before load_balancing
-        print("\nCore States Before Balancing:")
+        # print("\nCore States Before Balancing:")‍
         # print(f"JobList1: {[job.name for job in JobList1]}")
         # print(f"JobList2: {[job.name for job in JobList2]}")
         # print(f"JobList3: {[job.name for job in JobList3]}")
@@ -192,9 +200,9 @@ def handle_subSystem1(resources, tasks):
         if not (wait_queue):
             print("Exiting from main loop...")
             # Wait for all threads to complete
-            # threadCore1.join()
-            # threadCore2.join()
-            # threadCore3.join()
+            threadCore1.join()
+            threadCore2.join()
+            threadCore3.join()
             break
 
 def handle_subsystem2(resources, tasks):
@@ -370,7 +378,52 @@ def handle_core(JobList, R1, R2, wait_queue):
             break
 
 def receive_wait_queue():
-    pass
+    '''
+    Reads the wait queue from a file, ensuring mutual exclusion.
+    '''
+    with wait_queue_lock:
+        try:
+            with open(wait_queue_file, 'r') as file:
+                wait_queue = json.load(file)
+            return [Job(**job) for job in wait_queue]  # Convert dicts back to Job objects
+        except FileNotFoundError:
+            return []  # Return an empty list if the file does not exist
+
+def write_wait_queue(wait_queue):
+    '''
+    Writes the wait queue to a file, ensuring mutual exclusion.
+    '''
+    with wait_queue_lock:
+        with open(wait_queue_file, 'w') as file:
+            json.dump([job.__dict__ for job in wait_queue], file)  # Convert Job objects to dicts
+
+def receive_jobList(core_name):
+    '''
+    Reads the job list for a specific core from the file, ensuring mutual exclusion.
+    '''
+    with job_list_lock:
+        try:
+            with open(job_list_file, 'r') as file:
+                job_lists = json.load(file)
+            return [Job(**job) for job in job_lists.get(core_name, [])]  # Convert dicts back to Job objects
+        except FileNotFoundError:
+            return []  # Return an empty list if the file does not exist
+
+def write_job_list(core_name, job_list):
+    '''
+    Writes the job list for a specific core to the file, ensuring mutual exclusion.
+    '''
+    with job_list_lock:
+        try:
+            with open(job_list_file, 'r') as file:
+                job_lists = json.load(file)
+        except FileNotFoundError:
+            job_lists = {}
+
+        job_lists[core_name] = [job.__dict__ for job in job_list]  # Convert Job objects to dicts
+
+        with open(job_list_file, 'w') as file:
+            json.dump(job_lists, file)
 
 def load_balancing(top_three, jobList1, jobList2, jobList3):
     '''
