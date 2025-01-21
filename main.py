@@ -2,6 +2,7 @@ import threading
 import time
 import os
 import json
+from subsystem2 import handle_subsystem2
 
 allsubSystemResourses = []
 allsubSystemTasks = []
@@ -30,9 +31,9 @@ def main():
     #         print(f"  {task}")
 
     # Creating subsystem handler threads
-    thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
+    # thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
     # near future...
-    # thread2 = threading.Thread(target= handle_subSystem2).start()
+    thread2 = threading.Thread(target=handle_subsystem2, args=(allsubSystemResourses[1], allsubSystemTasks[1])).start()
     # thread3 = threading.Thread(target= handle_subSystem3).start()
     # thread4 = threading.Thread(target= handle_subSystem4).start()
 
@@ -264,15 +265,24 @@ def handle_subSystem1(resources, tasks):
     threadCore2.join()
     threadCore3.join()
 
-def handle_subsystem2(resources, tasks):
-    print("Handling Subsystem 2")
-    tasks.sort(key=lambda x: x.remaining_time)  # Shortest Remaining Time First
-    for task in tasks:
-        print(task)
+import threading
 
-    while tasks:
-        task = tasks.pop(0)
-        execute_task(task)
+def handle_subsystem2_chert(resources, tasks):
+    print("Handling Subsystem 2")
+    tasks.sort(key=lambda x: x.remain_time)  # Shortest Remaining Time First
+
+    # Create job list for the subsystem
+    job_list = []
+    for idx, task in enumerate(tasks):
+        job_list.append(Job(idx, task[0], int(task[1]), int(task[2]), int(task[3]), int(task[4]), int(task[5])))
+
+    # Write initial job list to the file
+    write_job_list("jobListSubsystem2", job_list)
+
+    # Start thread for the subsystem
+    threadSubsystem2 = threading.Thread(target=handle_core, args=("jobListSubsystem2", resources[0], resources[1]))
+    threadSubsystem2.start()
+    threadSubsystem2.join()
 
 def handle_subsystem3(resources, tasks):
     print("Handling Subsystem 3")
@@ -425,7 +435,6 @@ def execute_task(core, task):
     print_snapshot()
     '''
     pass
-
 
 # can be used in both subsystem 1 and 3 and 4
 def handle_wait_queue(wait_queue, currTime):
