@@ -16,17 +16,9 @@ job_list_file = "job_list.json"
 
 def main():
     initialize_json_files()
-    # print("Subsystem Resources:")
     read_data_from_file()
-    # for res in allsubSystemResourses:
-    #     print(res)
+    check_valid_input(allsubSystemTasks , allsubSystemResourses)
     
-    # print("\nSubsystem Tasks:")
-    # for idx, tasks in enumerate(allsubSystemTasks):
-    #     print(f"Subsystem {idx + 1} Tasks:")
-    #     for task in tasks:
-    #         print(f"  {task}")
-
     # Creating subsystem handler threads
     thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
     # near future...
@@ -115,6 +107,45 @@ class JobEncoder(json.JSONEncoder):
                 'state': obj.state
             }
         return super().default(obj)
+
+def check_valid_input(allsubSystemTasks , allsubSystemResources):
+    subsystemIndex = 1
+    for subsystemTask in allsubSystemTasks:
+        if subsystemIndex == 3:
+            sumr1 = sum(resource[0] for resource in allsubSystemResources)
+            sumr2 = sum(resource[1] for resource in allsubSystemResources)
+            for t in subsystemTask:
+                taskList = t.split(' ')
+                r1 = int(taskList[2])
+                r2 = int(taskList[3])
+                if r1 > sumr1 or r2 > sumr2:
+                    print(f"""
+                    Error: Task requires more resources than available.
+                    In Subsystem {subsystemIndex} 
+                    {t[0:3]} Requested: r1: {r1} and r2: {r2}
+                    Available Resources are r1: {sumr1} and r2: {sumr2}.
+                    Exiting from program........
+                    Try again later.
+                    """)
+                    exit(1)
+        else:    
+            for t in subsystemTask:
+                taskList = t.split(' ')
+                r1 = int(taskList[2])
+                r2 = int(taskList[3])
+                availableR1 = allsubSystemResources[subsystemIndex - 1][0]
+                availableR2 = allsubSystemResources[subsystemIndex - 1][1]
+                if r1 > availableR1 or r2 > availableR2:
+                    print(f"""
+                    Error: Task requires more resources than available.
+                    In Subsystem {subsystemIndex} 
+                    {t[0:3]} Requested: r1: {r1} and r2: {r2}
+                    Available Resources are r1: {availableR1} and r2: {availableR2}.
+                    Exiting from program........
+                    Try again later.
+                    """)
+                    exit(1)
+        subsystemIndex += 1
 
 # near future...
 def handle_subSystem1(resources, tasks):
