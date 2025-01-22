@@ -119,8 +119,9 @@ class JobEncoder(json.JSONEncoder):
 # near future...
 def handle_subSystem1(resources, tasks):
     """
-    Handles SubSystem1 that has 3 ready queues and 1 wait queue.
-    Simulates each CPU core with a thread and the main thread manages the wait queue.
+        Handles SubSystem1 that has 3 ready queues and 1 wait queue.
+
+        Simulates each CPU core with a thread and the main thread manages the wait queue.
     """
     # Initialize queues
     core1_queue, core2_queue, core3_queue = split_tasks_into_queues(tasks)
@@ -173,9 +174,17 @@ def handle_subSystem1(resources, tasks):
         wait_queue = receive_wait_queue()
         time.sleep(0.1)
 
-        # Exit condition
-        if not wait_queue:
-            print("Wait queue is empty, exiting...")
+        # Dynamically read the job lists to get their current state
+        JobList1 = receive_jobList("jobList1")
+        JobList2 = receive_jobList("jobList2")
+        JobList3 = receive_jobList("jobList3")
+
+        # Check total jobs left in all cores
+        total_jobs = len(JobList1) + len(JobList2) + len(JobList3)
+
+        # Exit condition: wait queue is empty and no jobs left in cores
+        if not wait_queue and total_jobs == 0:
+            print("Wait queue is empty and no jobs left in cores, exiting...")
             terminate_threads(threads, stop_event)
             break
 
@@ -290,7 +299,7 @@ def weighted_round_robin(job_list):
         a list of times indicated the time which we should switch contex from a process to anther process
     '''
     if not job_list:
-        print("Error: Job list is empty in weighted_round_robin.")
+        # print("Error: Job list is empty in weighted_round_robin.")
         return []
 
     schedule = []
@@ -333,7 +342,7 @@ def prioritize(job_list, quantum):
     Prioritizes jobs based on their burst times and assigns them a quantum.
     '''
     if not job_list:
-        print("Error: Job list is empty. Skipping prioritization.")
+        # print("Error: Job list is empty. Skipping prioritization.")
         return
     # Find the first valid burst time as a reference
     first_quantum = next((job.burst_time for job in job_list if job.burst_time > 0), None)
@@ -414,69 +423,47 @@ def handle_core(core_name, resources, stop_event):
     '''
     Handles tasks for a specific core.
     '''
-    while not stop_event.is_set():
-        # Read the job list for the core
-        JobList = receive_jobList(core_name)
+    current_time = 0
+    # Read the job list for the core
+    JobList = receive_jobList(core_name)
+    # Scheduling using weighted round-robin for each core
+    wrrList = weighted_round_robin(JobList)
+    # print("Initial wrrList: ", wrrList)
 
-        if not JobList:
-            # Exit if the job list is empty
-            print(f"{core_name} job list is empty, exiting...")
-            break
+    # Check resources and manage wait queue
+    wait_queue = receive_wait_queue()
 
-        else:
-            print("-"*50)
-            print("job list : ")
-            for job in list(JobList):
-                print(job)
-            print("-"*50)
+    while wrrList:
+        # print("wrrList (current): ", wrrList)
 
-        # scheduling using round robin algorithm for each core
-        wrrList = weighted_round_robin(JobList)
-        print("wrrList: ", wrrList)
-
-        # Check resources and manage wait queue
-        wait_queue = receive_wait_queue()
-        if wait_queue:
-            print("-"*50)
-            print("wait_queue : ")
-            for job in list(wait_queue):
-                print(job)
-            print("-"*50)
-
-        # check resource
+        # Pop the next item in order
         popped_item = wrrList.pop(0)
+        # print("popped item (ordered): ", popped_item)
+
         process_id = popped_item[1]
-        print("process_id: " , process_id)
-        job_to_process = JobList[process_id]
-        # JobList[process_id] = 0
+
+        # Process the job without fully removing it from JobList
+        if process_id < len(JobList) and JobList[process_id] is not None:
+            job_to_process = JobList[process_id]
+
+        # Handle resource checks and execution
         if check_resource(resources, job_to_process):
-            # we have enough resources, assign it to CPU
             resources[0] -= job_to_process.resource1
             resources[1] -= job_to_process.resource2
             job_to_process.state = "Running"
-            print(f"Job {job_to_process.name} is running.")
-            # run the task on CPU
+            # print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+            JobList[process_id].burst_time = job_to_process.burst_time - job_to_process.quantum
             execute_task(core_name, resources, job_to_process)
-            job_to_process.burst_time -= 1  # Reduce burst time
-
-            if job_to_process.burst_time == 0:
-                job_to_process.state = "Completed"
-                print(f"Job {job_to_process.name} is completed.")
-
         else:
-            # we don't have enough resources, put it to wait queue
             job_to_process.state = "Waiting"
             wait_queue.append(job_to_process)
             print(f"Job {job_to_process.name} is waiting for resources.")
-
-        # Remove completed jobs from JobList
-        JobList = [job for job in JobList if job.burst_time > 0]
 
         # Write updated job list and wait queue back to the file
         write_job_list(core_name, JobList)
         write_wait_queue(wait_queue)
 
-        print(f"Core {core_name} handled. Wait queue: {[job.name for job in wait_queue]}")
+        current_time += 1
 
 def receive_wait_queue():
     '''
@@ -510,7 +497,7 @@ def write_wait_queue(wait_queue):
     with wait_queue_lock:
         with open(wait_queue_file, 'w') as file:
             json.dump([job.__dict__ for job in wait_queue], file)  # Convert Job objects to dicts
-        print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
+        # print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
 
 def receive_jobList(core_name):
     """Read job list from JSON file with proper synchronization"""
@@ -536,7 +523,6 @@ def receive_jobList(core_name):
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error reading job list file: {e}")
             return []
-
 
 def write_job_list(core_name, job_list):
     """Write job list to JSON file with proper synchronization"""
