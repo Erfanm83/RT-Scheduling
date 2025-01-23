@@ -80,32 +80,11 @@ def handle_subSystem1(resources, tasks):
     # Initialize and start core threads
     threads = initialize_cores_and_threads(resources, [JobList1, JobList2, JobList3], stop_event)
 
-    # mock data
-    # wait_queue = [
-    # Job(1, "JobA", 5, 1, 1, 5, 1),
-    # Job(2, "JobB", 3, 1, 1, 5, 1),
-    # Job(3, "JobC", 2, 1, 1, 5, 1),
-    # Job(4, "JobD", 4, 1, 1, 6, 1),
-    # Job(5, "JobE", 6, 1, 1, 6, 1),
-    # Job(6, "JobF", 9, 1, 1, 7, 1),
-    # Job(7, "JobG", 2, 1, 1, 8, 1),
-    # Job(8, "JobH", 4, 1, 1, 9, 1),
-    # Job(9, "JobI", 8, 1, 1, 10, 1),
-    # Job(10, "JobJ", 5, 1, 1, 22, 1)
-    # ]
-    # x = 0
-    # for j in wait_queue:
-    #     j.arrival_wait_time = x
-    #     x += 1
-    
-    # current time
-    currTime = 0
     # Main loop to manage the wait queue
     curr_time = 0
     while True:
         # Receive the wait queue
         wait_queue = receive_wait_queue()
-        time.sleep(0.1)
 
         # Dynamically read the job lists to get their current state
         JobList1 = receive_jobList("jobList1")
@@ -234,6 +213,105 @@ def receive_wait_queue():
             print("Error: JSONDecodeError - The wait queue file is not properly formatted.")
             return []
 
+def receive_wait_queue():
+    '''
+    Reads the wait queue from a file, ensuring mutual exclusion, and removes it after reading.
+    '''
+    with wait_queue_lock:
+        try:
+            with open(wait_queue_file, 'r') as file:
+                content = file.read().strip()
+                if not content:
+                    return []
+                wait_queues = json.loads(content)
+                if not wait_queues:
+                    return []
+                wait_queue = wait_queues.pop()
+
+                with open(wait_queue_file, 'w') as file:
+                    json.dump(wait_queues, file, indent=4)
+
+                return [Job(**job) for job in wait_queue]  # Convert dicts back to Job objects
+        except FileNotFoundError:
+            return []  # Return an empty list if the file does not exist
+        except json.JSONDecodeError:
+            print("Error: JSONDecodeError - The wait queue file is not properly formatted.")
+            return []
+
+def process_wait_queue(wait_queue, job_lists, current_time):
+    top_three = handle_wait_queue(wait_queue, current_time)
+    # for debug
+    # print("Top Three Jobs:")
+    # for job in top_three:
+    # print(f"{job.name}: wait_time = {job.wait_time}")
+    updated_job_lists = [receive_jobList(f"jobList{i}") for i in range(1, 4)]
+    load_balancing(top_three, *updated_job_lists)
+    # Write updated job lists back to the file
+    for i, job_list in enumerate(updated_job_lists, start=1):
+        write_job_list(f"jobList{i}", job_list)
+    # Write updated wait queue back to the file
+    write_wait_queue(wait_queue)
+    # Debug: Print core states after load_balancing
+    # print("\nCore States After Balancing:")
+    # print(f"JobList1: {[job.name for job in JobList1]}")
+    # print(f"JobList2: {[job.name for job in JobList2]}")
+    # print(f"JobList3: {[job.name for job in JobList3]}")
+
+def terminate_threads(threads, stop_event):
+    stop_event.set()
+    for thread in threads:
+        thread.join()
+
+def handle_core(core_name, resources, stop_event):
+    '''
+    Handles tasks for a specific core.
+    '''
+    current_time = 0
+    # Read the job list for the core
+    JobList = receive_jobList(core_name)
+    # Scheduling using weighted round-robin for each core
+    wrrList = weighted_round_robin(JobList)
+    # print("Initial wrrList: ", wrrList)
+
+    # Check resources and manage wait queue
+    wait_queue = receive_wait_queue()
+
+    while wrrList or stop_event.is_set():
+        print("wrrList (current): ", wrrList)
+
+        # Pop the next item in order
+        if(wrrList):
+            popped_item = wrrList.pop(0)
+            print("popped item (ordered): ", popped_item)
+
+        process_id = popped_item[1]
+
+        # Process the job without fully removing it from JobList
+        if process_id < len(JobList) and JobList[process_id] is not None:
+            job_to_process = JobList[process_id]
+
+        # Handle resource checks and execution
+        if check_resource(resources, job_to_process):
+            resources[0] -= job_to_process.resource1
+            resources[1] -= job_to_process.resource2
+            job_to_process.state = "Running"
+            print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+            job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
+            execute_task(core_name, resources, job_to_process)
+        else:
+            job_to_process.state = "Waiting"
+            wait_queue.append(job_to_process)
+            print(f"Job {job_to_process.name} is waiting for resources.")
+            # Write to a txt file when a process enters the wait queue
+            with open("wait_queue_log.txt", "a") as log_file:
+                log_file.write(f"Time {current_time}: Job {job_to_process.name} entered wait queue\n")
+
+        # Write updated job list and wait queue back to the file
+        write_job_list(core_name, JobList)
+        write_wait_queue(wait_queue)
+
+        current_time += 1
+
 def receive_jobList(core_name):
     """Read job list from JSON file with proper synchronization"""
     with job_list_lock:
@@ -258,76 +336,6 @@ def receive_jobList(core_name):
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error reading job list file: {e}")
             return []
-
-def terminate_threads(threads, stop_event):
-    stop_event.set()
-    for thread in threads:
-        thread.join()
-
-def process_wait_queue(wait_queue, job_lists, current_time):
-    top_three = handle_wait_queue(wait_queue, current_time)
-    # for debug
-    # print("Top Three Jobs:")
-    # for job in top_three:
-    # print(f"{job.name}: wait_time = {job.wait_time}")
-    updated_job_lists = [receive_jobList(f"jobList{i}") for i in range(1, 4)]
-    load_balancing(top_three, *updated_job_lists)
-    # Write updated job lists back to the file
-    for i, job_list in enumerate(updated_job_lists, start=1):
-        write_job_list(f"jobList{i}", job_list)
-    # Write updated wait queue back to the file
-    write_wait_queue(wait_queue)
-    # Debug: Print core states after load_balancing
-    # print("\nCore States After Balancing:")
-    # print(f"JobList1: {[job.name for job in JobList1]}")
-    # print(f"JobList2: {[job.name for job in JobList2]}")
-    # print(f"JobList3: {[job.name for job in JobList3]}")
-
-def handle_core(core_name, resources, stop_event):
-    '''
-    Handles tasks for a specific core.
-    '''
-    current_time = 0
-    # Read the job list for the core
-    JobList = receive_jobList(core_name)
-    # Scheduling using weighted round-robin for each core
-    wrrList = weighted_round_robin(JobList)
-    # print("Initial wrrList: ", wrrList)
-
-    # Check resources and manage wait queue
-    wait_queue = receive_wait_queue()
-
-    while wrrList:
-        # print("wrrList (current): ", wrrList)
-
-        # Pop the next item in order
-        popped_item = wrrList.pop(0)
-        # print("popped item (ordered): ", popped_item)
-
-        process_id = popped_item[1]
-
-        # Process the job without fully removing it from JobList
-        if process_id < len(JobList) and JobList[process_id] is not None:
-            job_to_process = JobList[process_id]
-
-        # Handle resource checks and execution
-        if check_resource(resources, job_to_process):
-            resources[0] -= job_to_process.resource1
-            resources[1] -= job_to_process.resource2
-            job_to_process.state = "Running"
-            # print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
-            JobList[process_id].burst_time = job_to_process.burst_time - job_to_process.quantum
-            execute_task(core_name, resources, job_to_process)
-        else:
-            job_to_process.state = "Waiting"
-            wait_queue.append(job_to_process)
-            print(f"Job {job_to_process.name} is waiting for resources.")
-
-        # Write updated job list and wait queue back to the file
-        write_job_list(core_name, JobList)
-        write_wait_queue(wait_queue)
-
-        current_time += 1
 
 def load_balancing(top_three, jobList1, jobList2, jobList3):
     '''
@@ -379,7 +387,7 @@ def write_wait_queue(wait_queue):
     with wait_queue_lock:
         with open(wait_queue_file, 'w') as file:
             json.dump([job.__dict__ for job in wait_queue], file)  # Convert Job objects to dicts
-        # print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
+        print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
 
 def weighted_round_robin(job_list):
     ''' 
