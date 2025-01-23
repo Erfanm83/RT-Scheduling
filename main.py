@@ -178,32 +178,11 @@ def handle_subSystem1(resources, tasks):
     # Initialize and start core threads
     threads = initialize_cores_and_threads(resources, [JobList1, JobList2, JobList3], stop_event)
 
-    # mock data
-    # wait_queue = [
-    # Job(1, "JobA", 5, 1, 1, 5, 1),
-    # Job(2, "JobB", 3, 1, 1, 5, 1),
-    # Job(3, "JobC", 2, 1, 1, 5, 1),
-    # Job(4, "JobD", 4, 1, 1, 6, 1),
-    # Job(5, "JobE", 6, 1, 1, 6, 1),
-    # Job(6, "JobF", 9, 1, 1, 7, 1),
-    # Job(7, "JobG", 2, 1, 1, 8, 1),
-    # Job(8, "JobH", 4, 1, 1, 9, 1),
-    # Job(9, "JobI", 8, 1, 1, 10, 1),
-    # Job(10, "JobJ", 5, 1, 1, 22, 1)
-    # ]
-    # x = 0
-    # for j in wait_queue:
-    #     j.arrival_wait_time = x
-    #     x += 1
-    
-    # current time
-    currTime = 0
     # Main loop to manage the wait queue
     curr_time = 0
     while True:
         # Receive the wait queue
         wait_queue = receive_wait_queue()
-        time.sleep(0.1)
 
         # Dynamically read the job lists to get their current state
         JobList1 = receive_jobList("jobList1")
@@ -421,6 +400,11 @@ def execute_task(core_name, resources, job_to_process):
 
     print_snapshot()
     '''
+    resources[0] -= job_to_process.resource1
+    resources[1] -= job_to_process.resource2
+    job_to_process.state = "Running"
+    print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+    job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
     resources[0] += job_to_process.resource1
     resources[1] += job_to_process.resource2
 
@@ -465,11 +449,11 @@ def handle_core(core_name, resources, stop_event):
     wait_queue = receive_wait_queue()
 
     while wrrList:
-        # print("wrrList (current): ", wrrList)
+        print("wrrList (current): ", wrrList)
 
         # Pop the next item in order
         popped_item = wrrList.pop(0)
-        # print("popped item (ordered): ", popped_item)
+        print("popped item (ordered): ", popped_item)
 
         process_id = popped_item[1]
 
@@ -479,16 +463,14 @@ def handle_core(core_name, resources, stop_event):
 
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
-            resources[0] -= job_to_process.resource1
-            resources[1] -= job_to_process.resource2
-            job_to_process.state = "Running"
-            # print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
-            JobList[process_id].burst_time = job_to_process.burst_time - job_to_process.quantum
             execute_task(core_name, resources, job_to_process)
         else:
             job_to_process.state = "Waiting"
             wait_queue.append(job_to_process)
             print(f"Job {job_to_process.name} is waiting for resources.")
+            # Write to a txt file when a process enters the wait queue
+            with open("wait_queue_log.txt", "a") as log_file:
+                log_file.write(f"Time {current_time}: Job {job_to_process.name} entered wait queue\n")
 
         # Write updated job list and wait queue back to the file
         write_job_list(core_name, JobList)
@@ -528,7 +510,7 @@ def write_wait_queue(wait_queue):
     with wait_queue_lock:
         with open(wait_queue_file, 'w') as file:
             json.dump([job.__dict__ for job in wait_queue], file)  # Convert Job objects to dicts
-        # print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
+        print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
 
 def receive_jobList(core_name):
     """Read job list from JSON file with proper synchronization"""
