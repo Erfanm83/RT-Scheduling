@@ -1,0 +1,14 @@
+Time 21: Job T11 entered wait queue
+Time 19: Job T13 entered wait queue
+Time 20: Job T13 entered wait queue
+Time 22: Job T11 entered wait queue
+Time 23: Job T11 entered wait queue
+Time 24: Job T11 entered wait queue
+Time 24: Job T12 entered wait queue
+Time 29: Job T12 entered wait queue
+Time 30: Job T12 entered wait queue
+Time 31: Job T12 entered wait queue
+Time 32: Job T12 entered wait queue
+Time 33: Job T12 entered wait queue
+Time 28: Job T13 entered wait queue
+Time 19: Job T11 entered wait queue
