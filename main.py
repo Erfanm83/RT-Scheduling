@@ -400,11 +400,6 @@ def execute_task(core_name, resources, job_to_process):
 
     print_snapshot()
     '''
-    resources[0] -= job_to_process.resource1
-    resources[1] -= job_to_process.resource2
-    job_to_process.state = "Running"
-    print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
-    job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
     resources[0] += job_to_process.resource1
     resources[1] += job_to_process.resource2
 
@@ -448,7 +443,7 @@ def handle_core(core_name, resources, stop_event):
     # Check resources and manage wait queue
     wait_queue = receive_wait_queue()
 
-    while wrrList:
+    while wrrList or stop_event.is_set():
         print("wrrList (current): ", wrrList)
 
         # Pop the next item in order
@@ -463,6 +458,11 @@ def handle_core(core_name, resources, stop_event):
 
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
+            resources[0] -= job_to_process.resource1
+            resources[1] -= job_to_process.resource2
+            job_to_process.state = "Running"
+            print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+            job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
             execute_task(core_name, resources, job_to_process)
         else:
             job_to_process.state = "Waiting"
