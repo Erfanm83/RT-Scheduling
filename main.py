@@ -476,8 +476,8 @@ def handle_core(core_name, R1, R2):
         # break
 
     # scheduling using round robin algorithm for each core
-    wrrList = weighted_round_robin(JobList)
 
+    wrrList = weighted_round_robin(JobList)
     # Check resources and manage wait queue
     wait_queue = receive_wait_queue()
     check_resource(R1 , R2, wrrList, JobList, wait_queue)

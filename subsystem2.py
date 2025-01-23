@@ -110,12 +110,14 @@ def Shortest_Remaining_Time_First(tasks):
         elif task == current_task:
             current_duration += duration
         else:
-            combined_schedule.append(f"{current_task} {current_duration}")
+            # combined_schedule.append(f"{current_task} {current_task}")
+            combined_schedule.append((current_task, current_duration))
             current_task = task
             current_duration = duration
 
     if current_task is not None:
-        combined_schedule.append(f"{current_task} {current_duration}")
+        combined_schedule.append((current_task, current_duration))
+        # combined_schedule.append(f"{current_task} {current_duration}")
 
     return combined_schedule
 
@@ -126,6 +128,7 @@ def handle_subsystem2(resources, tasks):
     schedule = Shortest_Remaining_Time_First(tasks)  # Shortest Remaining Time First
 
     print("Schedule:" + str(schedule))
+    exit()
 
     # Create job list for the subsystem
     job_list_subsystem2 = []
