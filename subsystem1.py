@@ -283,32 +283,47 @@ def handle_core(core_name, resources, stop_event):
     # Check resources and manage wait queue
     wait_queue = receive_wait_queue()
 
+    core_status = {
+        1: {'running': None, 'ready_queue': []},
+        2: {'running': None, 'ready_queue': []},
+        3: {'running': None, 'ready_queue': []}
+    }
+
     while wrrList or stop_event.is_set():
-        print("wrrList (current): ", wrrList)
+        # print("wrrList (current): ", wrrList)
 
         # Pop the next item in order
         if(wrrList):
             popped_item = wrrList.pop(0)
-            print("popped item (ordered): ", popped_item)
+            # print("popped item (ordered): ", popped_item)
 
         process_id = popped_item[1]
 
         # Process the job without fully removing it from JobList
         if process_id < len(JobList) and JobList[process_id] is not None:
             job_to_process = JobList[process_id]
+            core_status[int(core_name[-1])]['running'] = job_to_process.name
+            core_status[int(core_name[-1])]['ready_queue'] = [j.name for j in JobList if j != job_to_process]
 
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
             resources[0] -= job_to_process.resource1
             resources[1] -= job_to_process.resource2
             job_to_process.state = "Running"
-            print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+            # print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
             job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
+            # print("current_time ", current_time)
+            # print("resources ", resources)
+            # # print("wait_queue ", wait_queue)
+            # print("core_name ", core_name)
+            # # print("Running task ", job_to_process)
+            # print("JobList ", JobList)
+            snapshot(current_time, resources, wait_queue, core_status)
             execute_task(core_name, resources, job_to_process)
         else:
             job_to_process.state = "Waiting"
             wait_queue.append(job_to_process)
-            print(f"Job {job_to_process.name} is waiting for resources.")
+            # print(f"Job {job_to_process.name} is waiting for resources.")
             # Write to a txt file when a process enters the wait queue
             with open("wait_queue_log.txt", "a") as log_file:
                 log_file.write(f"Time {current_time}: Job {job_to_process.name} entered wait queue\n")
@@ -318,6 +333,8 @@ def handle_core(core_name, resources, stop_event):
         write_wait_queue(wait_queue)
 
         current_time += 1
+
+    snapshot(current_time, resources, wait_queue, core_status)
 
 def receive_jobList(core_name):
     """Read job list from JSON file with proper synchronization"""
@@ -394,7 +411,7 @@ def write_wait_queue(wait_queue):
     with wait_queue_lock:
         with open(wait_queue_file, 'w') as file:
             json.dump([job.__dict__ for job in wait_queue], file)  # Convert Job objects to dicts
-        print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
+        # print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
 
 def weighted_round_robin(job_list):
     ''' 
@@ -510,3 +527,15 @@ def handle_wait_queue(wait_queue, currTime):
             wait_queue.remove(job)
     
     return top_three
+
+def snapshot(time, resources, wait_queue, core_status):
+    print(f"Time = {time}\n")
+    print("Sub1:\n")
+    print(f"    Resources: R1: {resources[0]} R2: {resources[1]}")
+    print(f"    Waiting Queue: {[job.name for job in wait_queue if job is not None]}\n")
+    
+    for core_id, status in core_status.items():
+        print(f"    Core{core_id}:\n")
+        print(f"        Running Task: {status['running']}")
+        print(f"        Ready Queue: {[job.name for job in status['ready_queue']]}\n")
+
