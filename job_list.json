@@ -3,7 +3,7 @@
         {
             "id": 0,
             "name": "T13",
-            "burst_time": -4,
+            "burst_time": -4238,
             "resource1": 3,
             "resource2": 3,
             "arrival_time": 0,
@@ -20,7 +20,7 @@
         {
             "id": 0,
             "name": "T11",
-            "burst_time": -4,
+            "burst_time": -4178,
             "resource1": 3,
             "resource2": 3,
             "arrival_time": 0,
@@ -37,7 +37,7 @@
         {
             "id": 0,
             "name": "T12",
-            "burst_time": -4,
+            "burst_time": -4110,
             "resource1": 3,
             "resource2": 3,
             "arrival_time": 0,
