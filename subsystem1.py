@@ -3,8 +3,8 @@ import time
 import os
 import json
 
-wait_queue_file = "wait_queue.json"
-job_list_file = "job_list.json"
+wait_queue_file = "wait_queue1.json"
+job_list_file = "job_list1.json"
 
 # Mutex locks
 wait_queue_lock = threading.Lock()
@@ -244,7 +244,6 @@ def receive_wait_queue():
         except Exception as e:
             print(f"Unexpected error: {str(e)}")
             return []
-
 
 def process_wait_queue(wait_queue, job_lists, current_time):
     top_three = handle_wait_queue(wait_queue, current_time)

@@ -3,6 +3,9 @@ import time
 import os
 import json
 from subsystem1 import handle_subSystem1
+from subsystem2 import handle_subSystem2
+# from subsystem3 import handle_subSystem3
+# from subsystem4 import handle_subSystem4
 
 allsubSystemResourses = []
 allsubSystemTasks = []
@@ -21,11 +24,11 @@ def main():
     check_valid_input(allsubSystemTasks , allsubSystemResourses)
     
     # Creating subsystem handler threads
-    thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
+    # thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
+    thread2 = threading.Thread(target= handle_subSystem2, args=(allsubSystemResourses[1], allsubSystemTasks[1])).start()
     # near future...
-    # thread2 = threading.Thread(target= handle_subSystem2).start()
-    # thread3 = threading.Thread(target= handle_subSystem3).start()
-    # thread4 = threading.Thread(target= handle_subSystem4).start()
+    # thread3 = threading.Thread(target= handle_subSystem3, args=(allsubSystemResourses[2], allsubSystemTasks[2])).start()
+    # thread4 = threading.Thread(target= handle_subSystem4, args=(allsubSystemResourses[3], allsubSystemTasks[3])).start()
 
     # Wait for all threads to complete
     # thread1.join()
