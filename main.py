@@ -2,6 +2,7 @@ import threading
 import time
 import os
 import json
+from subsystem3 import handle_subSystem2
 
 allsubSystemResourses = []
 allsubSystemTasks = []
@@ -18,12 +19,12 @@ def main():
     initialize_json_files()
     read_data_from_file()
     check_valid_input(allsubSystemTasks , allsubSystemResourses)
-    
+
     # Creating subsystem handler threads
-    thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
+    # thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
     # near future...
     # thread2 = threading.Thread(target= handle_subSystem2).start()
-    # thread3 = threading.Thread(target= handle_subSystem3).start()
+    thread3 = threading.Thread(target= handle_subSystem2, args=(allsubSystemResourses[2], allsubSystemTasks[2])).start()
     # thread4 = threading.Thread(target= handle_subSystem4).start()
 
     # Wait for all threads to complete
@@ -37,12 +38,12 @@ def main():
 def initialize_json_files():
     """Initialize JSON files with empty data if they don't exist"""
     default_data = {'jobList1': [], 'jobList2': [], 'jobList3': []}
-    
+
     # Initialize job_list_file
     if not os.path.exists(job_list_file):
         with open(job_list_file, 'w') as f:
             json.dump(default_data, f)
-    
+
     # Initialize wait_queue_file
     if not os.path.exists(wait_queue_file):
         with open(wait_queue_file, 'w') as f:
@@ -128,7 +129,7 @@ def check_valid_input(allsubSystemTasks , allsubSystemResources):
                     Try again later.
                     """)
                     exit(1)
-        else:    
+        else:
             for t in subsystemTask:
                 taskList = t.split(' ')
                 r1 = int(taskList[2])
@@ -281,7 +282,7 @@ def handle_subsystem3(resources, tasks):
             execute_task(task)
 
 def weighted_round_robin(job_list):
-    ''' 
+    '''
     Schedules jobs using a weighted round-robin algorithm.
     Input :
     def weighted_round_robin(jobList , quantum, core_ready_queue, wait_queue)
@@ -413,7 +414,7 @@ def handle_wait_queue(wait_queue, currTime):
     """Handle wait queue with proper None checks"""
     if not wait_queue or all(job is None for job in wait_queue):
         return []
-    
+
     # Filter out None values and update wait times
     valid_jobs = [job for job in wait_queue if job is not None]
     for job in valid_jobs:
@@ -422,16 +423,16 @@ def handle_wait_queue(wait_queue, currTime):
                 job.wait_time = currTime - job.arrival_wait_time
             else:
                 job.wait_time = 0
-    
+
     # Sort and get top three
     sorted_queue = sorted(valid_jobs, key=lambda item: item.wait_time, reverse=True)
     top_three = sorted_queue[:3]
-    
+
     # Remove top three from wait queue
     for job in top_three:
         if job in wait_queue:
             wait_queue.remove(job)
-    
+
     return top_three
 
 def handle_core(core_name, resources, stop_event):
@@ -547,10 +548,10 @@ def write_job_list(core_name, job_list):
                     job_lists = json.load(file)
             except (FileNotFoundError, json.JSONDecodeError):
                 job_lists = {'jobList1': [], 'jobList2': [], 'jobList3': []}
-            
+
             # Update the specific core's job list
             job_lists[core_name] = [json.loads(json.dumps(job, cls=JobEncoder)) for job in job_list]
-            
+
             # Write back to file
             with open(job_list_file, 'w') as file:
                 json.dump(job_lists, file, indent=4)
