@@ -3,11 +3,11 @@ import time
 import os
 import json
 
-wait_queue_file = "sub2_wait_queue.json"
+core1_queue_file = "sub2_core1_queue.json"
+core2_queue_file = "sub2_core2_queue.json"
 job_list_file = "sub2_job_list.json"
 
 # Mutex locks
-wait_queue_lock = threading.Lock()
 job_list_lock = threading.Lock()
 
 class Job:
@@ -41,41 +41,41 @@ class JobEncoder(json.JSONEncoder):
             }
         return super().default(obj)
 
-def detect_deadlock(job_list):
-    # Simple deadlock detection by checking for circular wait
-    resource_allocation = {job.id: (job.resource1, job.resource2) for job in job_list}
-    resource_request = {job.id: (job.resource1, job.resource2) for job in job_list if job.state == "Waiting"}
+# def detect_deadlock(job_list):
+#     # Simple deadlock detection by checking for circular wait
+#     resource_allocation = {job.id: (job.resource1, job.resource2) for job in job_list}
+#     resource_request = {job.id: (job.resource1, job.resource2) for job in job_list if job.state == "Waiting"}
 
-    for job_id, resources in resource_request.items():
-        if resources in resource_allocation.values():
-            return job_id  # Deadlock detected, return the job id involved in deadlock
-    return None
+#     for job_id, resources in resource_request.items():
+#         if resources in resource_allocation.values():
+#             return job_id  # Deadlock detected, return the job id involved in deadlock
+#     return None
 
-def resolve_deadlock(job_list, job_id):
-    # Preempt the job involved in deadlock
-    for job in job_list:
-        if job.id == job_id:
-            job.state = "Ready"
-            job.remain_time = job.burst_time  # Reset remaining time
-            print(f"Deadlock resolved by preempting job {job.id}")
-            break
+# def resolve_deadlock(job_list, job_id):
+#     # Preempt the job involved in deadlock
+#     for job in job_list:
+#         if job.id == job_id:
+#             job.state = "Ready"
+#             job.remain_time = job.burst_time  # Reset remaining time
+#             print(f"Deadlock resolved by preempting job {job.id}")
+#             break
 
-def core_execution(core_id, job_list, resources, condition):
-    while job_list:
-        with condition:
-            job_list.sort(key=lambda x: x.remain_time)  # Shortest Remaining Time First
-            for job in job_list:
-                if job.state == "Ready":
-                    job.state = "Running"
-                    with job.lock:
-                        print(f"Core {core_id} is executing job {job.id}")
-                        # Simulate job execution
-                        job.remain_time = 0
-                        job.state = "Completed"
-                        print(f"Core {core_id} completed job {job.id}")
-                    break
-            condition.notify_all()
-            condition.wait()  # Wait for the next job to be ready
+# def core_execution(core_id, job_list, resources, condition):
+#     while job_list:
+#         with condition:
+#             job_list.sort(key=lambda x: x.remain_time)  # Shortest Remaining Time First
+#             for job in job_list:
+#                 if job.state == "Ready":
+#                     job.state = "Running"
+#                     with job.lock:
+#                         print(f"Core {core_id} is executing job {job.id}")
+#                         # Simulate job execution
+#                         job.remain_time = 0
+#                         job.state = "Completed"
+#                         print(f"Core {core_id} completed job {job.id}")
+#                     break
+#             condition.notify_all()
+#             condition.wait()  # Wait for the next job to be ready
 
 def Shortest_Remaining_Time_First(tasks):
     # Parse tasks into a list of dictionaries
@@ -108,7 +108,7 @@ def Shortest_Remaining_Time_First(tasks):
             current_task.remain_time -= 1
             time += 1
 
-        schedule.append(f"{current_task.name} {time - start_time}")
+        schedule.append(f"{current_task.id} {time - start_time}")
 
         # If the task is completed, remove it from the list
         if current_task.remain_time == 0:
@@ -128,12 +128,12 @@ def Shortest_Remaining_Time_First(tasks):
         elif task == current_task:
             current_duration += duration
         else:
-            combined_schedule.append((current_task, current_duration))
+            combined_schedule.append((int(current_task), current_duration))
             current_task = task
             current_duration = duration
 
     if current_task is not None:
-        combined_schedule.append((current_task, current_duration))
+        combined_schedule.append((int(current_task), current_duration))
     return combined_schedule
 
 def handle_subSystem2(resources, tasks):
@@ -152,29 +152,34 @@ def handle_subSystem2(resources, tasks):
     JobList = create_job_list(core_queue)
 
     # Write initial job lists to files
-    write_job_list("jobList", JobList)
+    write_job_list(JobList)
 
     # Create stop event for threads
     stop_event = threading.Event()
 
     # Initialize and start core thread
-    thread = threading.Thread(target=handle_core, args=("jobList", resources, stop_event))
+    thread = threading.Thread(target=handle_core, args=(resources, stop_event))
     thread.start()
 
-    # Main loop to manage the wait queue
-    curr_time = 0
-    while True:
-        # Dynamically read the job lists to get their current state
-        JobList = receive_jobList("jobList")
+    # Main loop to manage the ready queue
+    # curr_time = 0
+    # while True:
+    #     time.sleep(1)
+    #     # Dynamically read the job lists to get their current state
+    #     JobList = receive_jobList("jobList")
 
-        # Exit condition: wait queue is empty and no jobs left in cores
-        if len(JobList) == 0:
-            stop_event.set()
-            thread.join()
-            print("Wait queue is empty and no jobs left in cores, exiting...")
-            break
+    #     # print("the Joblist at handle_subSystem2: ")
+    #     # for j in JobList:
+    #     #     print(j)
 
-        curr_time += 1
+    #     # Exit condition: jobList is empty and no jobs left in cores
+    #     if len(JobList) == 0:
+    #         stop_event.set()
+    #         thread.join()
+    #         print("jobList is empty and no jobs left in cores, exiting...")
+    #         break
+
+    #     curr_time += 1
 
 def create_job_list(core_queue):
     job_list = []
@@ -185,118 +190,92 @@ def create_job_list(core_queue):
             job_id += 1
     return job_list
 
-def write_job_list(core_name, job_list):
-    """Write job list to JSON file with proper synchronization"""
-    with job_list_lock:
-        try:
-            # Read existing data
-            try:
-                with open(job_list_file, 'r') as file:
-                    job_lists = json.load(file)
-            except (FileNotFoundError, json.JSONDecodeError):
-                job_lists = {'jobList': []}
-            
-            # Update the specific core's job list
-            job_lists[core_name] = [json.loads(json.dumps(job, cls=JobEncoder)) for job in job_list]
-            
-            # Write back to file
-            with open(job_list_file, 'w') as file:
-                json.dump(job_lists, file, indent = 4)
-        except Exception as e:
-            print(f"Error writing to {core_name}: {str(e)}")
-
-def initialize_cores_and_threads(resources, job_lists, stop_event):
-    threads = []
-    for i, job_list in enumerate(job_lists, start=1):
-        thread = threading.Thread(target=handle_core, args=(f"jobList{i}", resources, stop_event))
-        threads.append(thread)
-        thread.start()
-    return threads
-
-def handle_core(core_name, resources, stop_event):
+def handle_core(resources, stop_event):
     '''
     Handles tasks for a specific core.
     '''
     current_time = 0
+
     # Read the job list for the core
-    JobList = receive_jobList(core_name)
+    JobList = read_job_list()
 
     # Scheduling using shortest remaining time first for each core
-    schedule = Shortest_Remaining_Time_First(JobList)  # Shortest Remaining Time First
-    print("schedule: ", schedule)
+    srtfList = Shortest_Remaining_Time_First(JobList)  # Shortest Remaining Time First
+    print("schedule: ", srtfList)
 
-    while not len(JobList) == 0 or not stop_event.is_set():
+    core1_queue = []
+    core2_queue = []
+    while not len(srtfList) == 0:
         # Pop the next item in order
-        if(JobList):
-            job_to_process = JobList.pop(0)
+        if(srtfList):
+            job_to_process = srtfList.pop(0)
             print("popped item (ordered): ", job_to_process)
 
-        process_id = job_to_process.id
+        process_id = job_to_process[0]
         print("process_id : " , process_id)
+
+        if process_id < len(JobList) and JobList[process_id] is not None:
+            job_to_process = JobList[process_id]
+
+        if not len(core1_queue) == 0 and len(core2_queue) == 0:
+            print("cores are empty and no jobs left in cores, exiting...")
+            # terminate_threads(threads, stop_event2)
+            break
 
         # deadlock_job_id = detect_deadlock(job_list_subsystem2)
         # if deadlock_job_id is not None:
         #     resolve_deadlock(job_list_subsystem2, deadlock_job_id)
 
-        # Process the job without fully removing it from JobList
-        # if process_id < len(JobList) and JobList[process_id] is not None:
-        #     job_to_process = JobList[process_id]
-
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
-            print(f"we have resource for {job_to_process.name}")
-            # resources[0] -= job_to_process.resource1
-            # resources[1] -= job_to_process.resource2
-            # job_to_process.state = "Running"
-            # print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
-            # # job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
-            # execute_task(core_name, resources, job_to_process)
+            resources[0] -= job_to_process.resource1
+            resources[1] -= job_to_process.resource2
+            job_to_process.state = "Running"
+            print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+            execute_task(resources, job_to_process)
         else:
             print(f"we don't have resource for {job_to_process.name}")
-            # job_to_process.state = "Waiting"
-            # print(f"Job {job_to_process.name} is waiting for resources.")
-            # # Write to a txt file when a process enters the wait queue
-            # with open("wait_queue_log.txt", "a") as log_file:
-            #     log_file.write(f"Time {current_time}: Job {job_to_process.name} waits for resource\n")
+            # Add job_to_process to the head of srtfList
+            srtfList.insert(0, job_to_process)
+            job_to_process.state = "Waiting"
+            print(f"Job {job_to_process.name} is waiting for resources.")
+        write_job_list(srtfList)
 
-        # Write updated job list and wait queue back to the file
-        # write_job_list(core_name, JobList)
+        current_time += 1
 
-        # current_time += 1
+def write_job_list(job_list):
+    """Write job list to JSON file with proper synchronization"""
+    with job_list_lock:
+        try:
+            # Convert job list to JSON serializable format
+            job_data = [json.loads(json.dumps(job, cls=JobEncoder)) for job in job_list]
+            
+            # Write to file
+            with open(job_list_file, 'w') as file:
+                json.dump(job_data, file, indent=4)
+        except Exception as e:
+            print(f"Error: {str(e)}")
 
-def receive_jobList(core_name):
+def read_job_list():
     """Read job list from JSON file with proper synchronization"""
     with job_list_lock:
         try:
+            # Attempt to open and read the job list file
             with open(job_list_file, 'r') as file:
-                content = file.read().strip()
-                if not content:
-                    return []
-                job_lists = json.loads(content)
-                job_data = job_lists.pop(core_name, [])
+                job_data = json.load(file)
 
-                # Write back the updated job lists without the read core_name
-                with open(job_list_file, 'w') as file:
-                    json.dump(job_lists, file, indent=4)
-
-                # Ensure only valid mappings are passed to Job
-                if not all(isinstance(job, dict) for job in job_data):
-                    print(f"Warning: Invalid job data format for {core_name}: {job_data}")
-                    job_data = [job for job in job_data if isinstance(job, dict)]
-
-                return [Job(**job) for job in job_data]
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error reading job list file: {e}")
-            return []
-        
-def write_wait_queue(wait_queue):
-    '''
-    Writes the wait queue to a file, ensuring mutual exclusion.
-    '''
-    with wait_queue_lock:
-        with open(wait_queue_file, 'w') as file:
-            json.dump([job.__dict__ for job in wait_queue], file)  # Convert Job objects to dicts
-        print(f"Wait queue written to {wait_queue_file}: {[job.name for job in wait_queue]}")
+            # Convert JSON objects back into Job instances
+            job_list = [Job(**job) for job in job_data]
+            return job_list
+        except FileNotFoundError:
+            print("Error: Job list file not found.")
+            return []  # Return an empty list if the file is not found
+        except json.JSONDecodeError:
+            print("Error: Failed to decode JSON from job list file.")
+            return []  # Return an empty list if there is a decoding error
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return []  # Return an empty list if any other exception occurs
 
 def check_resource(resources, job_to_process):
     '''
@@ -304,15 +283,13 @@ def check_resource(resources, job_to_process):
 
     if YES, put them to cores and execute the task
 
-    if NO, put them to wait queue
-
     '''
     if 0 <= resources[0] - job_to_process.resource1 and 0 <= resources[1] - job_to_process.resource2:
         return True
     else:
         return False
 
-def execute_task(core_name, resources, job_to_process):
+def execute_task(resources, job_to_process):
     '''
     execute task on core and print snapShot of system
 
@@ -320,3 +297,9 @@ def execute_task(core_name, resources, job_to_process):
     '''
     resources[0] += job_to_process.resource1
     resources[1] += job_to_process.resource2
+
+def terminate_threads(threads, stop_event):
+    stop_event.set()
+    for thread in threads:
+        thread.join()
+
