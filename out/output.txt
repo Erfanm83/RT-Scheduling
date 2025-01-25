@@ -1,0 +1,153 @@
+Time = 0
+Sub1:
+      Resources: R1: 0 R2: 0
+      Waiting Queue: []
+
+      Core1:
+              Running Task: T11
+              Ready Queue: []
+
+      Core2:
+              Running Task: None
+              Ready Queue: []
+
+      Core3:
+              Running Task: None
+              Ready Queue: []
+
+Time = 0
+Sub1:
+      Resources: R1: 0 R2: 0
+      Waiting Queue: []
+
+      Core1:
+              Running Task: None
+              Ready Queue: []
+
+      Core2:
+              Running Task: T12
+              Ready Queue: []
+
+      Core3:
+              Running Task: None
+              Ready Queue: []
+
+Time = 0
+Sub1:
+      Resources: R1: 0 R2: 0
+      Waiting Queue: []
+
+      Core1:
+              Running Task: None
+              Ready Queue: []
+
+      Core2:
+              Running Task: None
+              Ready Queue: []
+
+      Core3:
+              Running Task: T13
+              Ready Queue: []
+
+Time = 2
+Sub1:
+      Resources: R1: 0 R2: 0
+      Waiting Queue: []
+
+      Core1:
+              Running Task: T11
+              Ready Queue: []
+
+      Core2:
+              Running Task: None
+              Ready Queue: []
+
+      Core3:
+              Running Task: None
+              Ready Queue: []
+
+Time = 2
+Sub1:
+      Resources: R1: 0 R2: 0
+      Waiting Queue: []
+
+      Core1:
+              Running Task: None
+              Ready Queue: []
+
+      Core2:
+              Running Task: T12
+              Ready Queue: []
+
+      Core3:
+              Running Task: None
+              Ready Queue: []
+
+Time = 2
+Sub1:
+      Resources: R1: 0 R2: 0
+      Waiting Queue: []
+
+      Core1:
+              Running Task: None
+              Ready Queue: []
+
+      Core2:
+              Running Task: None
+              Ready Queue: []
+
+      Core3:
+              Running Task: T13
+              Ready Queue: []
+
+Time = 4
+Sub1:
+      Resources: R1: 3 R2: 3
+      Waiting Queue: []
+
+      Core1:
+              Running Task: T11
+              Ready Queue: []
+
+      Core2:
+              Running Task: None
+              Ready Queue: []
+
+      Core3:
+              Running Task: None
+              Ready Queue: []
+
+Time = 4
+Sub1:
+      Resources: R1: 3 R2: 3
+      Waiting Queue: []
+
+      Core1:
+              Running Task: None
+              Ready Queue: []
+
+      Core2:
+              Running Task: T12
+              Ready Queue: []
+
+      Core3:
+              Running Task: None
+              Ready Queue: []
+
+Time = 4
+Sub1:
+      Resources: R1: 3 R2: 3
+      Waiting Queue: []
+
+      Core1:
+              Running Task: None
+              Ready Queue: []
+
+      Core2:
+              Running Task: None
+              Ready Queue: []
+
+      Core3:
+              Running Task: T13
+              Ready Queue: []
+

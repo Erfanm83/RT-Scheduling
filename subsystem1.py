@@ -289,7 +289,7 @@ def handle_core(core_name, resources, stop_event):
         3: {'running': None, 'ready_queue': []}
     }
 
-    while wrrList or stop_event.is_set():
+    while wrrList:
         # print("wrrList (current): ", wrrList)
 
         # Pop the next item in order
@@ -320,6 +320,10 @@ def handle_core(core_name, resources, stop_event):
             # print("JobList ", JobList)
             snapshot(current_time, resources, wait_queue, core_status)
             execute_task(core_name, resources, job_to_process)
+            current_time += 1
+            if job_to_process.remain_time <= 0:
+                    JobList[process_id] = None
+                    core_status[int(core_name[-1])]['running'] = None
         else:
             job_to_process.state = "Waiting"
             wait_queue.append(job_to_process)
@@ -528,7 +532,19 @@ def handle_wait_queue(wait_queue, currTime):
     
     return top_three
 
-def snapshot(time, resources, wait_queue, core_status):
+def snapshot(time, resources, wait_queue, core_status, file_path="out/output.txt"):
+    with open(file_path, 'a') as f:
+        f.write(f"Time = {time}\n")
+        f.write("Sub1:\n")
+        f.write(f"      Resources: R1: {resources[0]} R2: {resources[1]}\n")
+        f.write(f"      Waiting Queue: {[job.name for job in wait_queue if job is not None]}\n\n")
+        
+        for core_id, status in core_status.items():
+            f.write(f"      Core{core_id}:\n")
+            f.write(f"              Running Task: {status['running']}\n")
+            f.write(f"              Ready Queue: {[job.name for job in status['ready_queue']]}\n\n")
+
+def snapshot1(time, resources, wait_queue, core_status):
     print(f"Time = {time}\n")
     print("Sub1:\n")
     print(f"    Resources: R1: {resources[0]} R2: {resources[1]}")
