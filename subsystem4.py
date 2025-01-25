@@ -3,6 +3,7 @@ import time
 import os
 import json
 import random
+from resource_utils import take_resources, return_resources
 
 wait_queue_file = "./wait_queues/wait_queue4.json"
 core1_queue_file = "./ready_queues/core1_ready_queue4.json"

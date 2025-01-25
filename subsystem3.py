@@ -1,7 +1,7 @@
 import threading
 import json
 import time
-from subsystem1 import get_reources
+from resource_utils import take_resources, return_resources
 
 wait_queue_file = "./wait_queues/wait_queue3.json"
 job_list_file = "./ready_queues/ready_queue3.json"
@@ -103,7 +103,7 @@ class JobEncoder(json.JSONEncoder):
 #         # write_job_list(rm_schedule)
 #         current_time += 1
 
-def handle_subSystem3(resources, tasks):
+def handle_subSystem3(tasks, y):
     current_time = 0
     JobList = []
 
@@ -122,28 +122,39 @@ def handle_subSystem3(resources, tasks):
         if process_id < len(JobList) and JobList[process_id] is not None:
             job_to_process = JobList[process_id]
 
-        print("job_to_process: ", job_to_process.name)
+        print("job_to_process: ", job_to_process)
 
+        resource1 = int(job_to_process[2])
+        resource2 = int(job_to_process[3])
+
+        r1, r2 = take_resources("sub3", resource1, resource2)
+        resources = [r1, r2]
         # Case 1: Schedulable and have resource 
         if isschedulable and check_resource(resources, job_to_process):
             print("1")
-            run_and_print_snapshot(resources, job_to_process, current_time)
+            execute_task(resources, job_to_process)
+            # run_and_print_snapshot(resources, job_to_process, current_time)
         # Case 2: Not schedulable and have resource
         elif not isschedulable and check_resource(resources, job_to_process):
             print("2")
             if borrow_and_run(resources, job_to_process, only_borrow_one=True):
-                run_and_print_snapshot(resources, job_to_process, current_time)
+                execute_task(resources, job_to_process)
+                # run_and_print_snapshot(resources, job_to_process, current_time)
         # Case 3: Not schedulable and not have resource
         elif not isschedulable and not check_resource(resources, job_to_process):
             print("3")
+            execute_task(resources, job_to_process)
             if borrow_and_run(resources, job_to_process, only_borrow_one=False):
-                run_and_print_snapshot(resources, job_to_process, current_time)
+                execute_task(resources, job_to_process)
+                # run_and_print_snapshot(resources, job_to_process, current_time)
         # Case 4: Schedulable and not have resource
         elif isschedulable and not check_resource(resources, job_to_process):
             print("4")
             if borrow_and_run(resources, job_to_process, only_borrow_one=False):
-                run_and_print_snapshot(resources, job_to_process, current_time)
+                execute_task(resources, job_to_process)
+                # run_and_print_snapshot(resources, job_to_process, current_time)
 
+        return_resources("sub3", r1, r2)
         current_time += 1
 
 def borrow_and_run(resources, job_to_process, only_borrow_one):
@@ -152,7 +163,7 @@ def borrow_and_run(resources, job_to_process, only_borrow_one):
     If only_borrow_one is True, attempt to borrow only one resource from each subsystem.
     Otherwise, borrow enough resources to meet the job's needs.
     """
-    r1, r2 = get_reources()  # Get available resources from other subsystems
+    r1, r2 = resources[0], resources[1]  # Get available resources from other subsystems
     needed_r1 = max(0, int(job_to_process[2]) - resources[0])
     needed_r2 = max(0, int(job_to_process[3]) - resources[1])
 
