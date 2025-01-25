@@ -304,7 +304,7 @@ def handle_core(core_name, x):
         resources = [r1, r2]
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
-            r1 , r2 = take_resources("sub1", job_to_process.resource1, job_to_process.resource2)
+            # r1 , r2 = take_resources("sub1", job_to_process.resource1, job_to_process.resource2)
             # resources[0] -= job_to_process.resource1
             # resources[1] -= job_to_process.resource2
             # r1 = resources[0]
