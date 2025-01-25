@@ -4,9 +4,10 @@ import os
 import json
 import random
 
-core1_queue_file = "sub4_core1_queue.json"
-core2_queue_file = "sub4_core2_queue.json"
-job_list_file = "sub4_job_list.json"
+wait_queue_file = "./wait_queues/wait_queue4.json"
+core1_queue_file = "./ready_queues/core1_ready_queue4.json"
+core2_queue_file = "./ready_queues/core2_ready_queue4.json"
+job_list_file = "./ready_queues/ready_queue4.json"
 
 # Mutex locks
 job_list_lock = threading.Lock()

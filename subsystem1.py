@@ -4,8 +4,8 @@ import os
 import json
 from resource_utils import take_resources, return_resources
 
-wait_queue_file = "wait_queue1.json"
-job_list_file = "job_list1.json"
+wait_queue_file = "./wait_queues/wait_queue1.json"
+job_list_file = "./ready_queues/ready_queue1.json"
 
 # Mutex locks
 wait_queue_lock = threading.Lock()

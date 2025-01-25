@@ -3,8 +3,8 @@ import json
 import time
 from subsystem1 import get_reources
 
-wait_queue_file = "wait_queue3.json"
-job_list_file = "job_list3.json"
+wait_queue_file = "./wait_queues/wait_queue3.json"
+job_list_file = "./ready_queues/ready_queue3.json"
 output_file = "out.txt"
 
 # Mutex locks

@@ -2,10 +2,11 @@ import threading
 import time
 import os
 import json
+from resource_utils import take_resources, return_resources
 
-core1_queue_file = "sub2_core1_queue.json"
-core2_queue_file = "sub2_core2_queue.json"
-job_list_file = "sub2_job_list.json"
+core1_ready_queue = "./ready_queues/core1_ready_queue2.json"
+core2_ready_queue = "./ready_queues/core2_ready_queue2.json"
+job_list_file = "./ready_queues/job_list.json"
 
 # Mutex locks
 job_list_lock = threading.Lock()
@@ -40,42 +41,6 @@ class JobEncoder(json.JSONEncoder):
                 'state': obj.state
             }
         return super().default(obj)
-
-# def detect_deadlock(job_list):
-#     # Simple deadlock detection by checking for circular wait
-#     resource_allocation = {job.id: (job.resource1, job.resource2) for job in job_list}
-#     resource_request = {job.id: (job.resource1, job.resource2) for job in job_list if job.state == "Waiting"}
-
-#     for job_id, resources in resource_request.items():
-#         if resources in resource_allocation.values():
-#             return job_id  # Deadlock detected, return the job id involved in deadlock
-#     return None
-
-# def resolve_deadlock(job_list, job_id):
-#     # Preempt the job involved in deadlock
-#     for job in job_list:
-#         if job.id == job_id:
-#             job.state = "Ready"
-#             job.remain_time = job.burst_time  # Reset remaining time
-#             print(f"Deadlock resolved by preempting job {job.id}")
-#             break
-
-# def core_execution(core_id, job_list, resources, condition):
-#     while job_list:
-#         with condition:
-#             job_list.sort(key=lambda x: x.remain_time)  # Shortest Remaining Time First
-#             for job in job_list:
-#                 if job.state == "Ready":
-#                     job.state = "Running"
-#                     with job.lock:
-#                         print(f"Core {core_id} is executing job {job.id}")
-#                         # Simulate job execution
-#                         job.remain_time = 0
-#                         job.state = "Completed"
-#                         print(f"Core {core_id} completed job {job.id}")
-#                     break
-#             condition.notify_all()
-#             condition.wait()  # Wait for the next job to be ready
 
 def Shortest_Remaining_Time_First(tasks):
     # Parse tasks into a list of dictionaries
@@ -136,7 +101,7 @@ def Shortest_Remaining_Time_First(tasks):
         combined_schedule.append((int(current_task), current_duration))
     return combined_schedule
 
-def handle_subSystem2(resources, tasks):
+def handle_subSystem2(tasks, y):
     """
         Handles SubSystem2 that has a ready queues and NO wait queue.
 
@@ -158,7 +123,7 @@ def handle_subSystem2(resources, tasks):
     stop_event = threading.Event()
 
     # Initialize and start core thread
-    thread = threading.Thread(target=handle_core, args=(resources, stop_event))
+    thread = threading.Thread(target=handle_core)
     thread.start()
 
     # Main loop to manage the ready queue
@@ -190,7 +155,7 @@ def create_job_list(core_queue):
             job_id += 1
     return job_list
 
-def handle_core(resources, stop_event):
+def handle_core():
     '''
     Handles tasks for a specific core.
     '''
@@ -226,12 +191,15 @@ def handle_core(resources, stop_event):
         # if deadlock_job_id is not None:
         #     resolve_deadlock(job_list_subsystem2, deadlock_job_id)
 
+        r1, r2 = take_resources("sub2", job_to_process.resource1, job_to_process.resource2)
+        resources = [r1, r2]
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
-            resources[0] -= job_to_process.resource1
-            resources[1] -= job_to_process.resource2
+            # resources[0] -= job_to_process.resource1
+            # resources[1] -= job_to_process.resource2
             job_to_process.state = "Running"
             print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+            return_resources("sub2", r1, r2)
             execute_task(resources, job_to_process)
         else:
             print(f"we don't have resource for {job_to_process.name}")
@@ -242,6 +210,25 @@ def handle_core(resources, stop_event):
         write_job_list(srtfList)
 
         current_time += 1
+
+def detect_deadlock(job_list):
+    # Simple deadlock detection by checking for circular wait
+    resource_allocation = {job.id: (job.resource1, job.resource2) for job in job_list}
+    resource_request = {job.id: (job.resource1, job.resource2) for job in job_list if job.state == "Waiting"}
+
+    for job_id, resources in resource_request.items():
+        if resources in resource_allocation.values():
+            return job_id  # Deadlock detected, return the job id involved in deadlock
+    return None
+
+def resolve_deadlock(job_list, job_id):
+    # Preempt the job involved in deadlock
+    for job in job_list:
+        if job.id == job_id:
+            job.state = "Ready"
+            job.remain_time = job.burst_time  # Reset remaining time
+            print(f"Deadlock resolved by preempting job {job.id}")
+            break
 
 def write_job_list(job_list):
     """Write job list to JSON file with proper synchronization"""
@@ -302,4 +289,3 @@ def terminate_threads(threads, stop_event):
     stop_event.set()
     for thread in threads:
         thread.join()
-
