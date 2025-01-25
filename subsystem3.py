@@ -10,7 +10,7 @@ wait_queue_lock = threading.Lock()
 job_list_lock = threading.Lock()
 
 class Job:
-    def __init__(self, id, name, burst_time, resource1, resource2, arrival_time, period, deadline, **kwargs):
+    def __init__(self, id, name, burst_time, resource1, resource2, arrival_time, period, repetition, deadline, **kwargs):
         self.id = id
         self.name = name
         self.burst_time = burst_time
@@ -18,13 +18,14 @@ class Job:
         self.resource2 = resource2
         self.arrival_time = arrival_time
         self.period = period
+        self.repetition = repetition
         self.deadline = deadline
         self.remain_time = kwargs.get("remain_time", burst_time)
         self.state = kwargs.get("state", "Ready")  # Default state
     def __str__(self):
         return f""" Job properties:
-        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} |  {"period":^10} | {"arrival time":^12} | {"deadline":^10} | {"state":^10} |
-        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} |  {self.period:^10} | {self.arrival_time:^12} | {self.deadline:^10} | {self.state:^10} |"""
+        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} |  {"period":^10} | {"arrival time":^12} |  {"repetition":^10} | {"deadline":^10} | {"state":^10} |
+        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} |  {self.period:^10} | {self.arrival_time:^12} |  {self.repetition:^10} | {self.deadline:^10} | {self.state:^10} |"""
 
 class JobEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -37,6 +38,7 @@ class JobEncoder(json.JSONEncoder):
                 'resource2': obj.resource2,
                 'arrival_time': obj.arrival_time,
                 'period': obj.period,
+                'repetition': obj.repetition,
                 'deadline': obj.deadline,
                 'remain_time': obj.remain_time,
                 'state': obj.state
@@ -90,7 +92,7 @@ def handle_subSystem3(resources, tasks):
         # Print snapshot of the system's state
         # print_snapshot(curr_time, JobList, wait_queue)
 
-        # curr_time += 1
+        curr_time += 1
         # time.sleep(1)  # Simulate time unit
 
 def create_job_list(core_queue):
@@ -104,7 +106,7 @@ def create_job_list(core_queue):
         else:
             deadline = int(core_queue[i][4]) + int(core_queue[i][1])
         if item:
-            job_list.append(Job(job_id, item[0], int(item[1]), int(item[2]), int(item[3]), int(item[4]), int(item[5]), deadline))
+            job_list.append(Job(job_id, item[0], int(item[1]), int(item[2]), int(item[3]), int(item[4]), int(item[5]), int(item[6]), deadline))
             job_id += 1
     return job_list
 
@@ -114,11 +116,11 @@ def handle_core(resources, stop_event):
     '''
     # current_time = 0
 
-    # # Read the job list for the core
-    # JobList = read_job_list()
+    # Read the job list for the core
+    JobList = read_job_list()
 
-    # for job in JobList:
-    #     print(job)
+    for job in JobList:
+        print(job)
 
     # Scheduling using Rate Monotonic for the core
     # rm_schedule = rate_monotonic(JobList)
@@ -154,45 +156,114 @@ def handle_core(resources, stop_event):
 
         # current_time += 1
 
-def rate_monotonic(job_list):
-    '''
-    Schedules jobs using Rate Monotonic algorithm.
-    '''
-    if not job_list:
-        return []
+# def rate_monotonic(job_list):
+#     '''
+#     Schedules jobs using Rate Monotonic algorithm.
+#     '''
+#     if not job_list:
+#         return []
 
+#     schedule = []
+
+#     # Sort jobs by their period (deadline)
+#     job_list.sort(key=lambda x: x.deadline)
+
+#     # Current system time
+#     current_time = 0
+
+#     while job_list:
+#         for job in job_list[:]:
+#             if job.arrival_time <= current_time:
+#                 # How long this job can run
+#                 time_slice = min(job.remain_time, job.deadline - current_time)
+
+#                 # Record the start time and the job being executed
+#                 schedule.append((current_time, job.id))
+
+#                 # Update the current time and remaining burst time
+#                 current_time += time_slice
+#                 job.remain_time -= time_slice
+
+#                 # If the job has finished, remove it from the list
+#                 if job.remain_time <= 0:
+#                     job_list.remove(job)
+
+#         if not job_list:
+#             break
+
+#         # If no job was executed, advance the time to the next arrival_time
+#         current_time = min(job.arrival_time for job in job_list if job.arrival_time > current_time)
+
+#     return schedule
+
+def rate_monotonic(tasks):
+    """
+    وظایف را براساس الگوریتم RMS زمان‌بندی می‌کند.
+
+    tasks: لیستی از رشته‌های وظایف به فرمت 'T31 20 2 3 0 50 10'.
+    خروجی:
+    - True و برنامه زمان‌بندی اگر قابل زمان‌بندی باشد.
+    - False و [] اگر زمان‌بندی‌پذیر نباشد.
+    """
+    # پارس کردن اطلاعات وظایف
+    parsed_tasks = []
+    for task in tasks:
+        name = task.name
+        name, burst_time, resource1, resource2, arrival_time, period, repetition = task.split()
+        parsed_tasks.append({
+            "name": name,
+            "burst_time": int(burst_time),
+            "resource1": int(resource1),
+            "resource2": int(resource2),
+            "arrival_time": int(arrival_time),
+            "period": int(period),
+            "repetition": int(repetition),
+            "remaining_repetition": int(repetition),
+            "next_deadline": int(arrival_time) + int(period),  # محاسبه ددلاین اولیه
+        })
+
+    # محاسبه بار کاری سیستم
+    utilization = sum(task["burst_time"] / task["period"] for task in parsed_tasks)
+    n = len(parsed_tasks)
+    utilization_bound = n * (2 ** (1 / n) - 1)
+
+    # بررسی قابلیت زمان‌بندی
+    # if utilization > utilization_bound:
+        # return False, []  # زمان‌بندی‌پذیر نیست
+
+    # ایجاد جدول زمان‌بندی
     schedule = []
-
-    # Sort jobs by their period (deadline)
-    job_list.sort(key=lambda x: x.deadline)
-
-    # Current system time
     current_time = 0
+    total_tasks = sum(task["remaining_repetition"] for task in parsed_tasks)
 
-    while job_list:
-        for job in job_list[:]:
-            if job.arrival_time <= current_time:
-                # How long this job can run
-                time_slice = min(job.remain_time, job.deadline - current_time)
+    while total_tasks > 0:
+        # یافتن وظیفه‌ای که باید اجرا شود
+        parsed_tasks.sort(key=lambda x: (x["period"], x["next_deadline"]))  # اولویت براساس دوره تناوب و ددلاین
+        task_scheduled = False
 
-                # Record the start time and the job being executed
-                schedule.append((current_time, job.id))
+        for task in parsed_tasks:
+            if task["remaining_repetition"] > 0 and current_time >= task["arrival_time"] and current_time + task["burst_time"] <= task["next_deadline"]:
+                # اجرای وظیفه
+                execution_time = task["burst_time"]
+                schedule.append((task["name"], execution_time))
+                current_time += execution_time
+                task["remaining_repetition"] -= 1
+                task["arrival_time"] += task["period"]  # به‌روزرسانی زمان ورود بعدی
+                task["next_deadline"] += task["period"]  # به‌روزرسانی ددلاین بعدی
+                task_scheduled = True
+                total_tasks -= 1
+                break
 
-                # Update the current time and remaining burst time
-                current_time += time_slice
-                job.remain_time -= time_slice
+        if not task_scheduled:
+            # وقتی وظیفه‌ای برای اجرا وجود ندارد
+            if schedule and schedule[-1][0] == '-':
+                schedule[-1] = ('-', schedule[-1][1] + 1)
+            else:
+                schedule.append(('-', 1))
+            current_time += 1
 
-                # If the job has finished, remove it from the list
-                if job.remain_time <= 0:
-                    job_list.remove(job)
+    return True, schedule
 
-        if not job_list:
-            break
-
-        # If no job was executed, advance the time to the next arrival_time
-        current_time = min(job.arrival_time for job in job_list if job.arrival_time > current_time)
-
-    return schedule
 
 def write_job_list(job_list):
     """Write job list to JSON file with proper synchronization"""
