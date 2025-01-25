@@ -8,6 +8,8 @@ core1_queue_file = "sub4_core1_queue.json"
 core2_queue_file = "sub4_core2_queue.json"
 job_list_file = "sub4_job_list.json"
 
+task_finish = []
+
 # Mutex locks
 job_list_lock = threading.Lock()
 
@@ -88,8 +90,10 @@ def create_job_list(core_queue):
 
 def handle_core(resources, stop_event, core_id):
     '''
-    Handles tasks for a specific core.
+    Handles tasks for a specific core using FCFS algorithm.
     '''
+    global task_finish  # Use the global task_finish variable
+
     current_time = 0
 
     # Read the job list for the core
@@ -112,23 +116,101 @@ def handle_core(resources, stop_event, core_id):
                 fcfsList.append(job_to_process)
                 continue
 
-        if check_resource(resources, job_to_process):
-            
-            resources[0] -= job_to_process.resource1
-            resources[1] -= job_to_process.resource2
-            job_to_process.state = "Running"
-            print(f"Core {core_id} Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
-            execute_task(resources, job_to_process)
-            if random.random() < 0.3:  # 30% chance of re-execution
-                print(f"Core {core_id} Job {job_to_process.name} failed, re-executing")
-                job_to_process.state = "Ready"
-                fcfsList.append(job_to_process)
-            else:
-                job_to_process.state = "Completed"
+        flaggg = False
+        if job_to_process.dependencies != '-' and task_finish != []:
+            for dep in task_finish:
+                if dep.name == job_to_process.dependencies:
+                    flaggg = True
         else:
-            print(f"Core {core_id} we don't have resource for {job_to_process.name}")
-            fcfsList.append(job_to_process)
-            job_to_process.state = "Waiting"
+            flaggg = True
+
+        if flaggg:
+            if check_resource(resources, job_to_process):
+                # Allocate resources
+                resources[0] -= job_to_process.resource1
+                resources[1] -= job_to_process.resource2
+                job_to_process.state = "Running"
+                print(f"Core {core_id} Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+                execute_task(resources, job_to_process)
+
+                # Simulate error with 30% probability
+                if random.random() < 0.3:  # 30% chance of re-execution
+                    print(f"Core {core_id} Job {job_to_process.name} failed, re-executing")
+                    job_to_process.state = "Ready"
+                    fcfsList.append(job_to_process)
+                else:
+                    job_to_process.state = "Completed"
+                    task_finish.append(job_to_process)  # Add the completed job to task_finish
+            else:
+                print(f"Core {core_id} we don't have resource for {job_to_process.name}")
+                fcfsList.append(job_to_process)
+                job_to_process.state = "Waiting"
+        else:
+            print(f"Job {job_to_process.name} is dependencies {job_to_process.dependencies}")
+
+        write_job_list(fcfsList)
+
+        current_time += 1
+
+    # Final snapshot
+    # snapshot(current_time, resources, receive_wait_queue(), {core_id: {'running': None, 'ready_queue': fcfsList}})
+
+def handle_core1(resources, stop_event, core_id):
+    '''
+    Handles tasks for a specific core.
+    '''
+    current_time = 0
+
+    # Read the job list for the core
+    JobList = read_job_list()
+
+    # Scheduling using FCFS for each core
+    fcfsList = sorted(JobList, key=lambda x: x.arrival_time)
+    global tasks_finished
+    print(f"Core {core_id} schedule: ", fcfsList)
+
+    while fcfsList:
+        # Pop the next item in order
+        job_to_process = fcfsList.pop(0)
+        print(f"Core {core_id} popped item (ordered): ", job_to_process)
+
+        if job_to_process.dependencies:
+            # Check if dependencies are met
+            dependencies_met = all(dep.state == "Completed" for dep in JobList if dep.id in job_to_process.dependencies)
+            if not dependencies_met:
+                print(f"Core {core_id} waiting for dependencies of job {job_to_process.name}")
+                fcfsList.append(job_to_process)
+                continue
+        flaggg = False
+        if job_to_process.dependencies != '-':
+            for dep in task_finish:
+                if dep.name == job_to_process.dependencies:
+                    flaggg = True
+        else:
+            flaggg = True
+
+        if (flaggg):
+            if check_resource(resources, job_to_process):
+            
+                resources[0] -= job_to_process.resource1
+                resources[1] -= job_to_process.resource2
+                job_to_process.state = "Running"
+                print(f"Core {core_id} Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
+                execute_task(resources, job_to_process)
+                if random.random() < 0.3:  # 30% chance of re-execution
+                    print(f"Core {core_id} Job {job_to_process.name} failed, re-executing")
+                    job_to_process.state = "Ready"
+                    fcfsList.append(job_to_process)
+                else:
+                    job_to_process.state = "Completed"
+                    task_finish += job_to_process.name
+            else:
+                print(f"Core {core_id} we don't have resource for {job_to_process.name}")
+                fcfsList.append(job_to_process)
+                job_to_process.state = "Waiting"
+        else:
+             print(f"Job {job_to_process.name} is dependencies {job_to_process.dependencies}")
+            
 
         write_job_list(fcfsList)
 
