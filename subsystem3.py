@@ -23,8 +23,8 @@ class Job:
         self.state = kwargs.get("state", "Ready")  # Default state
     def __str__(self):
         return f""" Job properties:
-        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"deadline":^10} | {"state":^10} |
-        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} | {self.arrival_time:^12} | {self.deadline:^10} | {self.state:^10} |"""
+        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} |  {"period":^10} | {"arrival time":^12} | {"deadline":^10} | {"state":^10} |
+        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} |  {self.period:^10} | {self.arrival_time:^12} | {self.deadline:^10} | {self.state:^10} |"""
 
 class JobEncoder(json.JSONEncoder):
     def default(self, obj):
