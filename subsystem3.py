@@ -101,10 +101,8 @@ def create_job_list(core_queue):
     deadline = 0
     for i in range(len(core_queue)):
         item = core_queue[i]
-        if i + 1 < len(core_queue):
-            deadline = core_queue[i + 1][4]
-        else:
-            deadline = int(core_queue[i][4]) + int(core_queue[i][1])
+        print(item)
+        deadline = int(core_queue[i][4]) + int(core_queue[i][5])
         if item:
             job_list.append(Job(job_id, item[0], int(item[1]), int(item[2]), int(item[3]), int(item[4]), int(item[5]), int(item[6]), deadline))
             job_id += 1
@@ -119,12 +117,9 @@ def handle_core(resources, stop_event):
     # Read the job list for the core
     JobList = read_job_list()
 
-    for job in JobList:
-        print(job)
-
     # Scheduling using Rate Monotonic for the core
-    # rm_schedule = rate_monotonic(JobList)
-    # print("schedule: ", rm_schedule)
+    rm_schedule = rate_monotonic(JobList)
+    print("schedule: ", rm_schedule)
 
     # while not len(rm_schedule) == 0:
     #     # Pop the next item in order
@@ -209,7 +204,13 @@ def rate_monotonic(tasks):
     parsed_tasks = []
     for task in tasks:
         name = task.name
-        name, burst_time, resource1, resource2, arrival_time, period, repetition = task.split()
+        burst_time = task.burst_time
+        resource1 = task.resource1
+        resource2 = task.resource2
+        arrival_time = task.arrival_time
+        period = task.period
+        repetition = task.repetition
+        deadline = task.deadline
         parsed_tasks.append({
             "name": name,
             "burst_time": int(burst_time),
@@ -219,17 +220,19 @@ def rate_monotonic(tasks):
             "period": int(period),
             "repetition": int(repetition),
             "remaining_repetition": int(repetition),
-            "next_deadline": int(arrival_time) + int(period),  # محاسبه ددلاین اولیه
+            "next_deadline": deadline,  # محاسبه ددلاین اولیه
         })
 
+    for item in parsed_tasks:
+        print(item)
     # محاسبه بار کاری سیستم
     utilization = sum(task["burst_time"] / task["period"] for task in parsed_tasks)
     n = len(parsed_tasks)
     utilization_bound = n * (2 ** (1 / n) - 1)
 
     # بررسی قابلیت زمان‌بندی
-    # if utilization > utilization_bound:
-        # return False, []  # زمان‌بندی‌پذیر نیست
+    if utilization > utilization_bound:
+        return False, []  # زمان‌بندی‌پذیر نیست
 
     # ایجاد جدول زمان‌بندی
     schedule = []

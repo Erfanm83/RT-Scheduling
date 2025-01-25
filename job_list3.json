@@ -8,7 +8,7 @@
         "arrival_time": 4,
         "period": 4,
         "repetition": 10,
-        "deadline": "6",
+        "deadline": 8,
         "remain_time": 2,
         "state": "Ready"
     },
