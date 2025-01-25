@@ -7,7 +7,9 @@ from subsystem2 import handle_subSystem2
 from subsystem3 import handle_subSystem3
 from subsystem4 import handle_subSystem4
 
-allsubSystemResourses = []
+# Shared resource pool
+resource_pool = {}
+allsubSystemResources = []
 allsubSystemTasks = []
 
 # Mutex locks
@@ -21,21 +23,27 @@ job_list_file = "job_list.json"
 def main():
     initialize_json_files()
     read_data_from_file()
-    check_valid_input(allsubSystemTasks , allsubSystemResourses)
+    initialize_resource_pool()
+    check_valid_input(allsubSystemTasks, allsubSystemResources)
     
     # Creating subsystem handler threads
-    # thread1 = threading.Thread(target= handle_subSystem1, args=(allsubSystemResourses[0], allsubSystemTasks[0])).start()
-    # thread2 = threading.Thread(target= handle_subSystem2, args=(allsubSystemResourses[1], allsubSystemTasks[1])).start()
-    thread3 = threading.Thread(target= handle_subSystem3, args=(allsubSystemResourses[2], allsubSystemTasks[2])).start()
-    # thread4 = threading.Thread(target= handle_subSystem4, args=(allsubSystemResourses[3], allsubSystemTasks[3])).start()
+    thread1 = threading.Thread(target=handle_subSystem1, args=(allsubSystemResources[0], allsubSystemTasks[0]))
+    thread2 = threading.Thread(target=handle_subSystem2, args=(allsubSystemResources[1], allsubSystemTasks[1]))
+    thread3 = threading.Thread(target=handle_subSystem3, args=(allsubSystemResources[2], allsubSystemTasks[2]))
+    thread4 = threading.Thread(target=handle_subSystem4, args=(allsubSystemResources[3], allsubSystemTasks[3]))
+
+    thread1.start()
+    thread2.start()
+    thread3.start()
+    thread4.start()
 
     # Wait for all threads to complete
-    # thread1.join()
-    # thread2.join()
-    # thread3.join()
-    # thread4.join()
+    thread1.join()
+    thread2.join()
+    thread3.join()
+    thread4.join()
 
-    # print("All threads have finished execution.")
+    print("All threads have finished execution.")
 
 def initialize_json_files():
     """Initialize JSON files with empty data if they don't exist"""
@@ -52,14 +60,14 @@ def initialize_json_files():
             json.dump([], f)
 
 def read_data_from_file():
-    global allsubSystemResourses, allsubSystemTasks
+    global allsubSystemResources, allsubSystemTasks
 
     with open("./in.txt", 'r') as file:
         # Read subsystem resources
         for _ in range(4):
             line = file.readline().strip()
             resources = list(map(int, line.split()))
-            allsubSystemResourses.append(resources)
+            allsubSystemResources.append(resources)
 
         # Read subsystem tasks
         for _ in range(4):
@@ -71,25 +79,67 @@ def read_data_from_file():
                 subSystemTask.append(line)
             allsubSystemTasks.append(subSystemTask)
 
+def initialize_resource_pool():
+    """Initialize the global resource pool from the parsed subsystem resources"""
+    global resource_pool
+    for i, resources in enumerate(allsubSystemResources):
+        subsystem_name = f'sub{i + 1}'
+        resource_pool[subsystem_name] = {
+            'r1': resources[0],
+            'r2': resources[1],
+            'lock': threading.Lock()
+        }
 
-    def default(self, obj):
-        if isinstance(obj, Job):
-            return {
-                'id': obj.id,
-                'name': obj.name,
-                'burst_time': obj.burst_time,
-                'resource1': obj.resource1,
-                'resource2': obj.resource2,
-                'arrival_time': obj.arrival_time,
-                'CPU_dest': obj.CPU_dest,
-                'remain_time': obj.remain_time,
-                'wait_time': obj.wait_time,
-                'arrival_wait_time': obj.arrival_wait_time,
-                'priority': obj.priority,
-                'quantum': obj.quantum,
-                'state': obj.state
-            }
-        return super().default(obj)
+def take_resources(requesting_subsystem, r1_needed, r2_needed):
+    """
+    Borrow resources from other subsystems.
+    Returns the amounts borrowed for r1 and r2.
+    """
+    global resource_pool
+    borrowed_r1 = 0
+    borrowed_r2 = 0
+
+    for subsystem, data in resource_pool.items():
+        if subsystem == requesting_subsystem:
+            continue  # Skip the requesting subsystem itself
+
+        with data['lock']:
+            # Check and take available resources
+            if r1_needed > 0 and data['r1'] > 0:
+                borrow_r1 = min(r1_needed, data['r1'])
+                data['r1'] -= borrow_r1
+                borrowed_r1 += borrow_r1
+                r1_needed -= borrow_r1
+            
+            if r2_needed > 0 and data['r2'] > 0:
+                borrow_r2 = min(r2_needed, data['r2'])
+                data['r2'] -= borrow_r2
+                borrowed_r2 += borrow_r2
+                r2_needed -= borrow_r2
+
+            if r1_needed <= 0 and r2_needed <= 0:
+                break  # Stop if we've borrowed enough
+
+    return borrowed_r1, borrowed_r2
+
+def return_resources(requesting_subsystem, r1_returned, r2_returned):
+    """
+    Return borrowed resources to their original subsystems.
+    """
+    global resource_pool
+    # In this simple example, we'll distribute the returned resources back equally among all other subsystems.
+    for subsystem, data in resource_pool.items():
+        if subsystem == requesting_subsystem:
+            continue
+
+        with data['lock']:
+            data['r1'] += r1_returned
+            data['r2'] += r2_returned
+            r1_returned = 0
+            r2_returned = 0
+
+        if r1_returned <= 0 and r2_returned <= 0:
+            break
 
 def check_valid_input(allsubSystemTasks , allsubSystemResources):
     subsystemIndex = 1

@@ -6,6 +6,12 @@ import json
 wait_queue_file = "wait_queue1.json"
 job_list_file = "job_list1.json"
 
+r1 = 0
+r2 = 0
+
+def get_reources():
+    return r1, r2
+
 # Mutex locks
 wait_queue_lock = threading.Lock()
 job_list_lock = threading.Lock()
@@ -56,6 +62,9 @@ def handle_subSystem1(resources, tasks):
 
         Simulates each CPU core with a thread and the main thread manages the wait queue.
     """
+    r1 = resources[0]
+    r2 = resources[1]
+
     # Initialize queues
     core1_queue, core2_queue, core3_queue = split_tasks_into_queues(tasks)
 
@@ -301,6 +310,8 @@ def handle_core(core_name, resources, stop_event):
         if check_resource(resources, job_to_process):
             resources[0] -= job_to_process.resource1
             resources[1] -= job_to_process.resource2
+            r1 = resources[0]
+            r2 = resources[1]
             job_to_process.state = "Running"
             print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
             job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum

@@ -54,3 +54,5 @@ Time 2052: Job T12 entered wait queue
 Time 2053: Job T12 entered wait queue
 Time 2054: Job T12 entered wait queue
 Time 2060: Job T12 entered wait queue
+Time 0: Job T12 entered wait queue
+Time 0: Job T12 entered wait queue

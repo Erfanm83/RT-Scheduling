@@ -1,9 +1,11 @@
 import threading
 import json
 import time
+from subsystem1 import get_reources
 
 wait_queue_file = "wait_queue3.json"
 job_list_file = "job_list3.json"
+output_file = "out.txt"
 
 # Mutex locks
 wait_queue_lock = threading.Lock()
@@ -45,151 +47,167 @@ class JobEncoder(json.JSONEncoder):
             }
         return super().default(obj)
 
-def handle_subSystem3(resources, tasks):
-    """
-        Handles SubSystem3 that has a ready queue and a wait queue.
+# def handle_subSystem3(resources, tasks):
+#     """
+#         Handles SubSystem3 that has a ready queue and a wait queue.
 
-        Simulates the CPU core with a thread.
-    """
-    # Initialize queue
-    core_queue = []
+#         Simulates the CPU core with a thread.
+#     """
 
-    for t in tasks:
-        core_queue.append(t.split(' '))
-    
-    # Create JobList for the core
-    JobList = create_job_list(core_queue)
-
-    # Write initial job list to file
-    write_job_list(JobList)
-
-    # Create stop event for thread
-    stop_event = threading.Event()
-
-    # Initialize and start core thread
-    thread = threading.Thread(target=handle_core, args=(resources, stop_event))
-    thread.start()
-
-    # Main loop to manage the wait queue
-    curr_time = 0
-    while True:
-        # Receive the wait queue
-        wait_queue = receive_wait_queue()
-
-        # Dynamically read the job list to get its current state
-        JobList = read_job_list()
-
-        # Check total jobs left in the core
-        total_jobs = len(JobList)
-
-        # Exit condition: wait queue is empty and no jobs left in core
-        if not wait_queue and total_jobs == 0:
-            print("Wait queue is empty and no jobs left in core, exiting...")
-            stop_event.set()
-            thread.join()
-            break
-
-        # Print snapshot of the system's state
-        # print_snapshot(curr_time, JobList, wait_queue)
-
-        curr_time += 1
-        # time.sleep(1)  # Simulate time unit
-
-def create_job_list(core_queue):
-    job_list = []
-    job_id = 0
-    deadline = 0
-    for i in range(len(core_queue)):
-        item = core_queue[i]
-        print(item)
-        deadline = int(core_queue[i][4]) + int(core_queue[i][5])
-        if item:
-            job_list.append(Job(job_id, item[0], int(item[1]), int(item[2]), int(item[3]), int(item[4]), int(item[5]), int(item[6]), deadline))
-            job_id += 1
-    return job_list
-
-def handle_core(resources, stop_event):
-    '''
-    Handles tasks for the core.
-    '''
-    # current_time = 0
-
-    # Read the job list for the core
-    JobList = read_job_list()
-
-    # Scheduling using Rate Monotonic for the core
-    rm_schedule = rate_monotonic(JobList)
-    print("schedule: ", rm_schedule)
-
-    # while not len(rm_schedule) == 0:
-    #     # Pop the next item in order
-    #     if(rm_schedule):
-    #         job_to_process = rm_schedule.pop(0)
-    #         print("popped item (ordered): ", job_to_process)
-
-    #     process_id = job_to_process[0]
-    #     print("process_id : " , process_id)
-
-        
-        # if process_id < len(JobList) and JobList[process_id] is not None:
-        #     job_to_process = JobList[process_id]
-
-        # # Handle resource checks and execution
-        # if check_resource(resources, job_to_process):
-        #     resources[0] -= job_to_process.resource1
-        #     resources[1] -= job_to_process.resource2
-        #     job_to_process.state = "Running"
-        #     print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
-        #     execute_task(resources, job_to_process)
-        # else:
-        #     print(f"we don't have resource for {job_to_process.name}")
-        #     # Add job_to_process to the head of rm_schedule
-        #     rm_schedule.insert(0, job_to_process)
-        #     job_to_process.state = "Waiting"
-        #     print(f"Job {job_to_process.name} is waiting for resources.")
-        # write_job_list(rm_schedule)
-
-        # current_time += 1
-
-# def rate_monotonic(job_list):
-#     '''
-#     Schedules jobs using Rate Monotonic algorithm.
-#     '''
-#     if not job_list:
-#         return []
-
-#     schedule = []
-
-#     # Sort jobs by their period (deadline)
-#     job_list.sort(key=lambda x: x.deadline)
-
-#     # Current system time
 #     current_time = 0
 
-#     while job_list:
-#         for job in job_list[:]:
-#             if job.arrival_time <= current_time:
-#                 # How long this job can run
-#                 time_slice = min(job.remain_time, job.deadline - current_time)
+#     # Initialize queue
+#     JobList = []
 
-#                 # Record the start time and the job being executed
-#                 schedule.append((current_time, job.id))
+#     for t in tasks:
+#         JobList.append(t.split(' '))
 
-#                 # Update the current time and remaining burst time
-#                 current_time += time_slice
-#                 job.remain_time -= time_slice
+#     # Scheduling using Rate Monotonic for the core
+#     isschedulable, rm_schedule = rate_monotonic(JobList)
 
-#                 # If the job has finished, remove it from the list
-#                 if job.remain_time <= 0:
-#                     job_list.remove(job)
+#     while not len(rm_schedule) == 0:
+#         # Pop the next item in order
+#         if(rm_schedule):
+#             job_to_process = rm_schedule.pop(0)
+#             print("popped item (ordered): ", job_to_process)
+#             write_job_list(rm_schedule)
+        
+#         if(job_to_process[0] != "-"):
+#             process_id = int(job_to_process[0])
+#         else:
+#             process_id = -1
+#         print("process_id : " , process_id)
+        
+#         if process_id < len(JobList) and JobList[process_id] is not None:
+#             job_to_process = JobList[process_id]
 
-#         if not job_list:
-#             break
+#         print("job_to_process : ", job_to_process.name)
 
-#         # If no job was executed, advance the time to the next arrival_time
-#         current_time = min(job.arrival_time for job in job_list if job.arrival_time > current_time)
+#         if not isschedulable:
+            
 
-#     return schedule
+#         # Handle resource checks and execution
+#         if not check_resource(resources, job_to_process):
+#             print(2000*"#")
+#             # borrow from other subsystems
+#             r1 , r2 = borrow_resource()
+#             print(f"we don't have resource for {job_to_process.name} in Sub3 so we got r1 : {r1} and r2 : {r2}")
+#             # Add job_to_process to the head of rm_schedule
+#             print(f"Job {job_to_process.name} is waiting for resources.")
+
+#         resources[0] -= int(job_to_process[2])
+#         resources[1] -= int(job_to_process[3])
+#         # job_to_process.state = "Running"
+#         print(f"Job {job_to_process[0]} is running r1:{resources[0]} and r2:{resources[1]}")
+#         execute_task(resources, job_to_process)
+#         # write_job_list(rm_schedule)
+#         current_time += 1
+
+def handle_subSystem3(resources, tasks):
+    current_time = 0
+    JobList = []
+
+    for t in tasks:
+        JobList.append(t.split(' '))
+
+    isschedulable, rm_schedule = rate_monotonic(JobList)
+
+    while not len(rm_schedule) == 0:
+        if rm_schedule:
+            job_to_process = rm_schedule.pop(0)
+            print("popped item (ordered): ", job_to_process)
+            write_job_list(rm_schedule)
+
+        process_id = int(job_to_process[0]) if job_to_process[0] != "-" else -1
+        if process_id < len(JobList) and JobList[process_id] is not None:
+            job_to_process = JobList[process_id]
+
+        print("job_to_process: ", job_to_process.name)
+
+        # Case 1: Schedulable and have resource 
+        if isschedulable and check_resource(resources, job_to_process):
+            print("1")
+            run_and_print_snapshot(resources, job_to_process, current_time)
+        # Case 2: Not schedulable and have resource
+        elif not isschedulable and check_resource(resources, job_to_process):
+            print("2")
+            if borrow_and_run(resources, job_to_process, only_borrow_one=True):
+                run_and_print_snapshot(resources, job_to_process, current_time)
+        # Case 3: Not schedulable and not have resource
+        elif not isschedulable and not check_resource(resources, job_to_process):
+            print("3")
+            if borrow_and_run(resources, job_to_process, only_borrow_one=False):
+                run_and_print_snapshot(resources, job_to_process, current_time)
+        # Case 4: Schedulable and not have resource
+        elif isschedulable and not check_resource(resources, job_to_process):
+            print("4")
+            if borrow_and_run(resources, job_to_process, only_borrow_one=False):
+                run_and_print_snapshot(resources, job_to_process, current_time)
+
+        current_time += 1
+
+def borrow_and_run(resources, job_to_process, only_borrow_one):
+    """
+    Borrow resources from other subsystems to enable the task to run for half of its burst time.
+    If only_borrow_one is True, attempt to borrow only one resource from each subsystem.
+    Otherwise, borrow enough resources to meet the job's needs.
+    """
+    r1, r2 = get_reources()  # Get available resources from other subsystems
+    needed_r1 = max(0, int(job_to_process[2]) - resources[0])
+    needed_r2 = max(0, int(job_to_process[3]) - resources[1])
+
+    if only_borrow_one:
+        # Attempt to borrow just enough to run the task at half burst time
+        if r1 >= 1 or r2 >= 1:
+            resources[0] += 1
+            resources[1] += 1
+            return True
+    else:
+        # Borrow exactly what is needed
+        if r1 >= needed_r1 and r2 >= needed_r2:
+            resources[0] += needed_r1
+            resources[1] += needed_r2
+            return True
+
+    return False
+
+def run_and_print_snapshot(resources, job_to_process, current_time):
+    """
+    Run the task, consume resources, and print a snapshot of the system state to the output file.
+    """
+    resources[0] -= int(job_to_process[2])
+    resources[1] -= int(job_to_process[3])
+    job_to_process.state = "Running"
+
+    # Simulate running for half of the burst time
+    job_to_process.remain_time = max(0, job_to_process.remain_time - job_to_process.burst_time // 2)
+
+    # Restore resources after running
+    resources[0] += int(job_to_process[2])
+    resources[1] += int(job_to_process[3])
+    job_to_process.state = "Completed"
+
+    # Print snapshot to out.txt
+    with open(output_file, 'a') as f:
+        f.write(f"Time = {current_time}\n")
+        f.write(f"Sub3:\n\n")
+        f.write(f"    Resources: R1: {resources[0]} R2: {resources[1]}\n")
+        f.write(f"    Core1:\n")
+        f.write(f"        Running Task: {job_to_process.name}\n")
+        f.write(f"        Ready Queue: []\n\n")
+        f.write("------------------------------------------------------------\n")
+
+# def create_job_list(core_queue):
+#     job_list = []
+#     job_id = 0
+#     deadline = 0
+#     for i in range(len(core_queue)):
+#         item = core_queue[i]
+#         deadline = int(core_queue[i][4]) + int(core_queue[i][5])
+#         if item:
+#             job_list.append(Job(job_id, item[0], int(item[1]), int(item[2]), int(item[3]), int(item[4]), int(item[5]), int(item[6]), deadline))
+#             job_id += 1
+#     return job_list
 
 def rate_monotonic(tasks):
     """
@@ -202,16 +220,19 @@ def rate_monotonic(tasks):
     """
     # پارس کردن اطلاعات وظایف
     parsed_tasks = []
+    id = -1;
     for task in tasks:
-        name = task.name
-        burst_time = task.burst_time
-        resource1 = task.resource1
-        resource2 = task.resource2
-        arrival_time = task.arrival_time
-        period = task.period
-        repetition = task.repetition
-        deadline = task.deadline
+        id = id + 1;
+        name = task[0]
+        burst_time = int(task[1])
+        resource1 = int(task[2])
+        resource2 = int(task[3])
+        arrival_time = int(task[4])
+        period = int(task[5])
+        repetition = int(task[6])
+        deadline = period + arrival_time
         parsed_tasks.append({
+            "id": id,
             "name": name,
             "burst_time": int(burst_time),
             "resource1": int(resource1),
@@ -222,9 +243,6 @@ def rate_monotonic(tasks):
             "remaining_repetition": int(repetition),
             "next_deadline": deadline,  # محاسبه ددلاین اولیه
         })
-
-    for item in parsed_tasks:
-        print(item)
     # محاسبه بار کاری سیستم
     utilization = sum(task["burst_time"] / task["period"] for task in parsed_tasks)
     n = len(parsed_tasks)
@@ -245,10 +263,10 @@ def rate_monotonic(tasks):
         task_scheduled = False
 
         for task in parsed_tasks:
-            if task["remaining_repetition"] > 0 and current_time >= task["arrival_time"] and current_time + task["burst_time"] <= task["next_deadline"]:
+            if task["remaining_repetition"] > 0 and current_time >= task["arrival_time"] and current_time + int(task["burst_time"]) <= int(task["next_deadline"]):
                 # اجرای وظیفه
                 execution_time = task["burst_time"]
-                schedule.append((task["name"], execution_time))
+                schedule.append((task["id"], execution_time))
                 current_time += execution_time
                 task["remaining_repetition"] -= 1
                 task["arrival_time"] += task["period"]  # به‌روزرسانی زمان ورود بعدی
@@ -266,7 +284,6 @@ def rate_monotonic(tasks):
             current_time += 1
 
     return True, schedule
-
 
 def write_job_list(job_list):
     """Write job list to JSON file with proper synchronization"""
@@ -301,38 +318,6 @@ def read_job_list():
         except Exception as e:
             print(f"Error: {str(e)}")
             return []  # Return an empty list if any other exception occurs
-
-def receive_wait_queue():
-    '''Reads the wait queue from a file, ensuring mutual exclusion, and removes it after reading.'''
-    with wait_queue_lock:
-        try:
-            with open(wait_queue_file, 'r') as file:
-                content = file.read().strip()
-                if not content:
-                    return []
-                wait_queues = json.loads(content)
-                if not wait_queues:
-                    return []
-                wait_queue = wait_queues.pop(0)  # Assuming wait_queues is a list of queues
-
-                # Make sure the items in wait_queue are dictionaries
-                if not all(isinstance(job, dict) for job in wait_queue):
-                    print(f"Data format error: Expected dictionaries but got {type(wait_queue[0]) if wait_queue else 'empty list'}")
-                    return []
-
-                with open(wait_queue_file, 'w') as file:
-                    json.dump(wait_queues, file, indent=4)
-
-                return [Job(**job) for job in wait_queue]  # Ensure this only runs if all jobs are dicts
-        except FileNotFoundError:
-            print("FileNotFoundError: The wait queue file does not exist.")
-            return []
-        except json.JSONDecodeError:
-            print("JSONDecodeError: The wait queue file is not properly formatted.")
-            return []
-        except Exception as e:
-            print(f"Unexpected error: {str(e)}")
-            return []
 
 def handle_wait_queue(wait_queue, currTime):
     """Handle wait queue with proper None checks"""
@@ -379,14 +364,9 @@ def write_wait_queue(wait_queue):
 def check_resource(resources, job_to_process):
     '''
     check whether resources can meet the needs of task or not
-
     if YES, put them to cores and execute the task
-
     '''
-    if 0 <= resources[0] - job_to_process.resource1 and 0 <= resources[1] - job_to_process.resource2:
-        return True
-    else:
-        return False
+    return resources[0] >= int(job_to_process[2]) and resources[1] >= int(job_to_process[3])
 
 def execute_task(resources, job_to_process):
     '''
@@ -394,8 +374,8 @@ def execute_task(resources, job_to_process):
 
     print_snapshot()
     '''
-    resources[0] += job_to_process.resource1
-    resources[1] += job_to_process.resource2
+    resources[0] += int(job_to_process[2])
+    resources[1] += int(job_to_process[3])
 
 def print_snapshot(curr_time, job_list, wait_queue):
     '''
