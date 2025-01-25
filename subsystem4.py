@@ -24,9 +24,10 @@ class Job:
         self.dependencies = dependencies if dependencies else []
         self.lock = threading.Lock()
     def __str__(self):
+        dependencies_str = ', '.join(self.dependencies)
         return f""" Job properties:
-        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"state":^10} |
-        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} | {self.arrival_time:^12} | {self.state:^10} |"""
+        {"id":^10} | {"name":^10} | {"burst time":^10} | {"resource1":^10} | {"resource2":^10} | {"arrival time":^12} | {"dependencies":^12} | {"state":^10} |
+        {self.id:^10} | {self.name:^10} | {self.burst_time:^10} | {self.resource1:^10} | {self.resource2:^10} | {self.arrival_time:^12} | {dependencies_str:^12} | {self.state:^10} |"""
 
 class JobEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -57,6 +58,7 @@ def handle_subSystem4(resources, tasks):
     
     # Create JobLists for each core
     JobList = create_job_list(core_queue)
+        
 
     # Write initial job lists to files
     write_job_list(JobList)
@@ -111,6 +113,7 @@ def handle_core(resources, stop_event, core_id):
                 continue
 
         if check_resource(resources, job_to_process):
+            
             resources[0] -= job_to_process.resource1
             resources[1] -= job_to_process.resource2
             job_to_process.state = "Running"
