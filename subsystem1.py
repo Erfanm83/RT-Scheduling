@@ -519,4 +519,3 @@ def handle_wait_queue(wait_queue, currTime):
             wait_queue.remove(job)
     
     return top_three
-

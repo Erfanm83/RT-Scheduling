@@ -47,62 +47,6 @@ class JobEncoder(json.JSONEncoder):
             }
         return super().default(obj)
 
-# def handle_subSystem3(resources, tasks):
-#     """
-#         Handles SubSystem3 that has a ready queue and a wait queue.
-
-#         Simulates the CPU core with a thread.
-#     """
-
-#     current_time = 0
-
-#     # Initialize queue
-#     JobList = []
-
-#     for t in tasks:
-#         JobList.append(t.split(' '))
-
-#     # Scheduling using Rate Monotonic for the core
-#     isschedulable, rm_schedule = rate_monotonic(JobList)
-
-#     while not len(rm_schedule) == 0:
-#         # Pop the next item in order
-#         if(rm_schedule):
-#             job_to_process = rm_schedule.pop(0)
-#             print("popped item (ordered): ", job_to_process)
-#             write_job_list(rm_schedule)
-        
-#         if(job_to_process[0] != "-"):
-#             process_id = int(job_to_process[0])
-#         else:
-#             process_id = -1
-#         print("process_id : " , process_id)
-        
-#         if process_id < len(JobList) and JobList[process_id] is not None:
-#             job_to_process = JobList[process_id]
-
-#         print("job_to_process : ", job_to_process.name)
-
-#         if not isschedulable:
-            
-
-#         # Handle resource checks and execution
-#         if not check_resource(resources, job_to_process):
-#             print(2000*"#")
-#             # borrow from other subsystems
-#             r1 , r2 = borrow_resource()
-#             print(f"we don't have resource for {job_to_process.name} in Sub3 so we got r1 : {r1} and r2 : {r2}")
-#             # Add job_to_process to the head of rm_schedule
-#             print(f"Job {job_to_process.name} is waiting for resources.")
-
-#         resources[0] -= int(job_to_process[2])
-#         resources[1] -= int(job_to_process[3])
-#         # job_to_process.state = "Running"
-#         print(f"Job {job_to_process[0]} is running r1:{resources[0]} and r2:{resources[1]}")
-#         execute_task(resources, job_to_process)
-#         # write_job_list(rm_schedule)
-#         current_time += 1
-
 def handle_subSystem3(tasks, y):
     current_time = 0
     JobList = []
@@ -207,18 +151,6 @@ def run_and_print_snapshot(resources, job_to_process, current_time):
         f.write(f"        Running Task: {job_to_process.name}\n")
         f.write(f"        Ready Queue: []\n\n")
         f.write("------------------------------------------------------------\n")
-
-# def create_job_list(core_queue):
-#     job_list = []
-#     job_id = 0
-#     deadline = 0
-#     for i in range(len(core_queue)):
-#         item = core_queue[i]
-#         deadline = int(core_queue[i][4]) + int(core_queue[i][5])
-#         if item:
-#             job_list.append(Job(job_id, item[0], int(item[1]), int(item[2]), int(item[3]), int(item[4]), int(item[5]), int(item[6]), deadline))
-#             job_id += 1
-#     return job_list
 
 def rate_monotonic(tasks):
     """

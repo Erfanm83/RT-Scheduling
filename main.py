@@ -2,9 +2,9 @@ import threading
 import time
 import os
 import json
-# from subsystem1 import handle_subSystem1
-# from subsystem2 import handle_subSystem2
-# from subsystem3 import handle_subSystem3
+from subsystem1 import handle_subSystem1
+from subsystem2 import handle_subSystem2
+from subsystem3 import handle_subSystem3
 from subsystem4 import handle_subSystem4
 from resource_utils import initialize_resource_pool_from_file
 
@@ -21,20 +21,20 @@ def main():
     initialize_resource_pool_from_file("in.txt")
     
     # Creating subsystem handler threads
-    # thread1 = threading.Thread(target=handle_subSystem1, args=(allsubSystemTasks[0], []))
-    # thread2 = threading.Thread(target=handle_subSystem2, args=(allsubSystemTasks[1], []))
-    # thread3 = threading.Thread(target=handle_subSystem3, args=(allsubSystemTasks[2], []))
+    thread1 = threading.Thread(target=handle_subSystem1, args=(allsubSystemTasks[0], []))
+    thread2 = threading.Thread(target=handle_subSystem2, args=(allsubSystemTasks[1], []))
+    thread3 = threading.Thread(target=handle_subSystem3, args=(allsubSystemTasks[2], []))
     thread4 = threading.Thread(target=handle_subSystem4, args=(allsubSystemTasks[3], []))
 
-    # thread1.start()
-    # thread2.start()
-    # thread3.start()
+    thread1.start()
+    thread2.start()
+    thread3.start()
     thread4.start()
 
     # Wait for all threads to complete
-    # thread1.join()
-    # thread2.join()
-    # thread3.join()
+    thread1.join()
+    thread2.join()
+    thread3.join()
     thread4.join()
 
     print("All threads have finished execution.")

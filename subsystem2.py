@@ -126,26 +126,6 @@ def handle_subSystem2(tasks, y):
     thread = threading.Thread(target=handle_core)
     thread.start()
 
-    # Main loop to manage the ready queue
-    # curr_time = 0
-    # while True:
-    #     time.sleep(1)
-    #     # Dynamically read the job lists to get their current state
-    #     JobList = receive_jobList("jobList")
-
-    #     # print("the Joblist at handle_subSystem2: ")
-    #     # for j in JobList:
-    #     #     print(j)
-
-    #     # Exit condition: jobList is empty and no jobs left in cores
-    #     if len(JobList) == 0:
-    #         stop_event.set()
-    #         thread.join()
-    #         print("jobList is empty and no jobs left in cores, exiting...")
-    #         break
-
-    #     curr_time += 1
-
 def create_job_list(core_queue):
     job_list = []
     job_id = 0
