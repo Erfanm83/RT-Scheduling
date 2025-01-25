@@ -1,0 +1,24 @@
+[
+    {
+        "id": 0,
+        "name": "T31",
+        "burst_time": 2,
+        "resource1": 2,
+        "resource2": 20,
+        "arrival_time": 4,
+        "deadline": "6",
+        "remain_time": 2,
+        "state": "Ready"
+    },
+    {
+        "id": 1,
+        "name": "T32",
+        "burst_time": 4,
+        "resource1": 3,
+        "resource2": 2,
+        "arrival_time": 6,
+        "deadline": 10,
+        "remain_time": 4,
+        "state": "Ready"
+    }
+]

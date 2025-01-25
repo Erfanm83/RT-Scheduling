@@ -283,7 +283,7 @@ def handle_core(core_name, resources, stop_event):
     # Check resources and manage wait queue
     wait_queue = receive_wait_queue()
 
-    while wrrList or stop_event.is_set():
+    while wrrList:
         print("wrrList (current): ", wrrList)
 
         # Pop the next item in order
