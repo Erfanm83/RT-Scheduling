@@ -77,18 +77,15 @@ def handle_subSystem3(resources, tasks):
         # Dynamically read the job list to get its current state
         JobList = read_job_list()
 
-    #     # Check total jobs left in the core
-    #     total_jobs = len(JobList)
+        # Check total jobs left in the core
+        total_jobs = len(JobList)
 
-    #     # Exit condition: wait queue is empty and no jobs left in core
-    #     if not wait_queue and total_jobs == 0:
-    #         print("Wait queue is empty and no jobs left in core, exiting...")
-    #         stop_event.set()
-    #         thread.join()
-    #         break
-
-        # Process the wait queue and redistribute jobs
-        # process_wait_queue(wait_queue, JobList, curr_time)
+        # Exit condition: wait queue is empty and no jobs left in core
+        if not wait_queue and total_jobs == 0:
+            print("Wait queue is empty and no jobs left in core, exiting...")
+            stop_event.set()
+            thread.join()
+            break
 
         # Print snapshot of the system's state
         # print_snapshot(curr_time, JobList, wait_queue)
@@ -262,13 +259,6 @@ def receive_wait_queue():
         except Exception as e:
             print(f"Unexpected error: {str(e)}")
             return []
-
-def process_wait_queue(wait_queue, job_list, current_time):
-    top_three = handle_wait_queue(wait_queue, current_time)
-    updated_job_list = read_job_list()
-    load_balancing(top_three, updated_job_list)
-    write_job_list(updated_job_list)
-    write_wait_queue(wait_queue)
 
 def handle_wait_queue(wait_queue, currTime):
     """Handle wait queue with proper None checks"""
