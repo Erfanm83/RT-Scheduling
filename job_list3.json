@@ -6,6 +6,7 @@
         "resource1": 2,
         "resource2": 20,
         "arrival_time": 4,
+        "period": 10,
         "deadline": "6",
         "remain_time": 2,
         "state": "Ready"
@@ -17,6 +18,7 @@
         "resource1": 3,
         "resource2": 2,
         "arrival_time": 6,
+        "period": 2,
         "deadline": 10,
         "remain_time": 4,
         "state": "Ready"

@@ -36,6 +36,7 @@ class JobEncoder(json.JSONEncoder):
                 'resource1': obj.resource1,
                 'resource2': obj.resource2,
                 'arrival_time': obj.arrival_time,
+                'period': obj.period,
                 'deadline': obj.deadline,
                 'remain_time': obj.remain_time,
                 'state': obj.state
@@ -57,10 +58,6 @@ def handle_subSystem3(resources, tasks):
     # Create JobList for the core
     JobList = create_job_list(core_queue)
 
-    print("JobList: ")
-    for job in JobList:
-        print(job)
-
     # Write initial job list to file
     write_job_list(JobList)
 
@@ -72,13 +69,13 @@ def handle_subSystem3(resources, tasks):
     thread.start()
 
     # Main loop to manage the wait queue
-    # curr_time = 0
-    # while True:
-    #     # Receive the wait queue
-    #     wait_queue = receive_wait_queue()
+    curr_time = 0
+    while True:
+        # Receive the wait queue
+        wait_queue = receive_wait_queue()
 
-    #     # Dynamically read the job list to get its current state
-    #     JobList = read_job_list()
+        # Dynamically read the job list to get its current state
+        JobList = read_job_list()
 
     #     # Check total jobs left in the core
     #     total_jobs = len(JobList)
@@ -100,7 +97,6 @@ def handle_subSystem3(resources, tasks):
         # time.sleep(1)  # Simulate time unit
 
 def create_job_list(core_queue):
-    print(len(core_queue))
     job_list = []
     job_id = 0
     deadline = 0
