@@ -2,15 +2,10 @@ import threading
 import time
 import os
 import json
+from resource_utils import take_resources, return_resources
 
 wait_queue_file = "wait_queue1.json"
 job_list_file = "job_list1.json"
-
-r1 = 0
-r2 = 0
-
-def get_reources():
-    return r1, r2
 
 # Mutex locks
 wait_queue_lock = threading.Lock()
@@ -56,14 +51,13 @@ class JobEncoder(json.JSONEncoder):
             }
         return super().default(obj)
 
-def handle_subSystem1(resources, tasks):
+def handle_subSystem1(tasks, y):
     """
         Handles SubSystem1 that has 3 ready queues and 1 wait queue.
 
         Simulates each CPU core with a thread and the main thread manages the wait queue.
     """
-    r1 = resources[0]
-    r2 = resources[1]
+    global resource_pool
 
     # Initialize queues
     core1_queue, core2_queue, core3_queue = split_tasks_into_queues(tasks)
@@ -87,7 +81,7 @@ def handle_subSystem1(resources, tasks):
     stop_event = threading.Event()
 
     # Initialize and start core threads
-    threads = initialize_cores_and_threads(resources, [JobList1, JobList2, JobList3], stop_event)
+    threads = initialize_cores_and_threads([JobList1, JobList2, JobList3])
 
     # Main loop to manage the wait queue
     curr_time = 0
@@ -189,10 +183,10 @@ def write_job_list(core_name, job_list):
         except Exception as e:
             print(f"Error writing to {core_name}: {str(e)}")
 
-def initialize_cores_and_threads(resources, job_lists, stop_event):
+def initialize_cores_and_threads(job_lists):
     threads = []
     for i, job_list in enumerate(job_lists, start=1):
-        thread = threading.Thread(target=handle_core, args=(f"jobList{i}", resources, stop_event))
+        thread = threading.Thread(target=handle_core, args=(f"jobList{i}", []))
         threads.append(thread)
         thread.start()
     return threads
@@ -278,7 +272,7 @@ def terminate_threads(threads, stop_event):
     for thread in threads:
         thread.join()
 
-def handle_core(core_name, resources, stop_event):
+def handle_core(core_name, x):
     '''
     Handles tasks for a specific core.
     '''
@@ -306,15 +300,19 @@ def handle_core(core_name, resources, stop_event):
         if process_id < len(JobList) and JobList[process_id] is not None:
             job_to_process = JobList[process_id]
 
+        r1, r2 = take_resources("sub1", job_to_process.resource1, job_to_process.resource2)
+        resources = [r1, r2]
         # Handle resource checks and execution
         if check_resource(resources, job_to_process):
-            resources[0] -= job_to_process.resource1
-            resources[1] -= job_to_process.resource2
-            r1 = resources[0]
-            r2 = resources[1]
+            r1 , r2 = take_resources("sub1", job_to_process.resource1, job_to_process.resource2)
+            # resources[0] -= job_to_process.resource1
+            # resources[1] -= job_to_process.resource2
+            # r1 = resources[0]
+            # r2 = resources[1]
             job_to_process.state = "Running"
             print(f"Job {job_to_process.name} is running r1:{resources[0]} and r2:{resources[1]}")
             job_to_process.burst_time = job_to_process.burst_time - job_to_process.quantum
+            return_resources("sub1", r1, r2)
             execute_task(core_name, resources, job_to_process)
         else:
             job_to_process.state = "Waiting"
@@ -521,3 +519,4 @@ def handle_wait_queue(wait_queue, currTime):
             wait_queue.remove(job)
     
     return top_three
+
