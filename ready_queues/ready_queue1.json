@@ -3,7 +3,7 @@
         {
             "id": 0,
             "name": "T11",
-            "burst_time": -4,
+            "burst_time": -2,
             "resource1": 3,
             "resource2": 3,
             "arrival_time": 0,
@@ -11,16 +11,16 @@
             "remain_time": 4,
             "wait_time": 0,
             "arrival_wait_time": 0,
-            "priority": 0,
+            "priority": 1,
             "quantum": 2,
-            "state": "Running"
+            "state": "Waiting"
         }
     ],
     "jobList2": [
         {
             "id": 0,
             "name": "T12",
-            "burst_time": -4,
+            "burst_time": -2,
             "resource1": 3,
             "resource2": 3,
             "arrival_time": 0,
@@ -28,16 +28,16 @@
             "remain_time": 4,
             "wait_time": 0,
             "arrival_wait_time": 0,
-            "priority": 0,
+            "priority": 1,
             "quantum": 2,
-            "state": "Running"
+            "state": "Waiting"
         }
     ],
     "jobList3": [
         {
             "id": 0,
             "name": "T13",
-            "burst_time": -4,
+            "burst_time": -2,
             "resource1": 3,
             "resource2": 3,
             "arrival_time": 0,
@@ -45,9 +45,9 @@
             "remain_time": 4,
             "wait_time": 0,
             "arrival_wait_time": 0,
-            "priority": 0,
+            "priority": 1,
             "quantum": 2,
-            "state": "Running"
+            "state": "Waiting"
         }
     ]
 }

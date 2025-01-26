@@ -10,6 +10,7 @@ job_list_file = "./ready_queues/job_list.json"
 
 # Mutex locks
 job_list_lock = threading.Lock()
+print_snapshot_lock = threading.Lock()
 
 class Job:
     def __init__(self, id, name, burst_time, resource1, resource2, arrival_time, **kwargs):
@@ -41,6 +42,28 @@ class JobEncoder(json.JSONEncoder):
                 'state': obj.state
             }
         return super().default(obj)
+
+def handle_subSystem2(tasks, y):
+    """
+        Handles SubSystem2 that has a ready queues and NO wait queue.
+
+        Simulates each CPU core with a thread(here two cores available).
+    """
+    # Initialize queue
+    core_queue = []
+
+    for t in tasks:
+        core_queue.append(t.split(' '))
+    
+    # Create JobLists for each core
+    JobList = create_job_list(core_queue)
+
+    # Write initial job lists to files
+    write_job_list(JobList)
+
+    # Initialize and start core thread
+    thread = threading.Thread(target=handle_core)
+    thread.start()
 
 def Shortest_Remaining_Time_First(tasks):
     # Parse tasks into a list of dictionaries
@@ -101,31 +124,6 @@ def Shortest_Remaining_Time_First(tasks):
         combined_schedule.append((int(current_task), current_duration))
     return combined_schedule
 
-def handle_subSystem2(tasks, y):
-    """
-        Handles SubSystem2 that has a ready queues and NO wait queue.
-
-        Simulates each CPU core with a thread(here two cores available).
-    """
-    # Initialize queue
-    core_queue = []
-
-    for t in tasks:
-        core_queue.append(t.split(' '))
-    
-    # Create JobLists for each core
-    JobList = create_job_list(core_queue)
-
-    # Write initial job lists to files
-    write_job_list(JobList)
-
-    # Create stop event for threads
-    stop_event = threading.Event()
-
-    # Initialize and start core thread
-    thread = threading.Thread(target=handle_core)
-    thread.start()
-
 def create_job_list(core_queue):
     job_list = []
     job_id = 0
@@ -139,8 +137,6 @@ def handle_core():
     '''
     Handles tasks for a specific core.
     '''
-    current_time = 0
-
     # Read the job list for the core
     JobList = read_job_list()
 
@@ -148,6 +144,7 @@ def handle_core():
     srtfList = Shortest_Remaining_Time_First(JobList)  # Shortest Remaining Time First
     print("schedule: ", srtfList)
 
+    current_time = 0
     core1_queue = []
     core2_queue = []
     while not len(srtfList) == 0:
@@ -189,6 +186,8 @@ def handle_core():
             print(f"Job {job_to_process.name} is waiting for resources.")
         write_job_list(srtfList)
 
+        # Call print_snapshot at the end of each iteration
+        print_snapshot(current_time, resources, core1_queue, core2_queue)
         current_time += 1
 
 def detect_deadlock(job_list):
@@ -269,3 +268,42 @@ def terminate_threads(threads, stop_event):
     stop_event.set()
     for thread in threads:
         thread.join()
+
+def print_snapshot(curr_time, resources, core1_queue, core2_queue):
+    """
+    Print the current state of subsystem2 to the out.txt file.
+    Format:
+    Time = <curr_time>
+    Sub2:
+        Resources: R1: <r1> R2: <r2>
+        Core1:
+            Running Task: <task>
+            Ready Queue: [<ready tasks>]
+        Core2:
+            Running Task: <task>
+            Ready Queue: [<ready tasks>]
+    """
+    # Generate the formatted snapshot string
+    snapshot_lines = [f"Time = {curr_time}\n", "\nSub2:\n"]
+    snapshot_lines.append(f"\tResources: R1: {resources[0]} R2: {resources[1]}\n")
+    
+    # For core1
+    running_task1 = core1_queue[0].name if core1_queue else "None"
+    ready_queue1 = [job.name for job in core1_queue[1:]]
+    snapshot_lines.append("\tCore1:\n")
+    snapshot_lines.append(f"\t\tRunning Task: {running_task1}\n")
+    snapshot_lines.append(f"\t\tReady Queue: {ready_queue1}\n")
+    
+    # For core2
+    running_task2 = core2_queue[0].name if core2_queue else "None"
+    ready_queue2 = [job.name for job in core2_queue[1:]]
+    snapshot_lines.append("\tCore2:\n")
+    snapshot_lines.append(f"\t\tRunning Task: {running_task2}\n")
+    snapshot_lines.append(f"\t\tReady Queue: {ready_queue2}\n")
+    
+    snapshot_lines.append("\n---------------------------------------------------------------------\n")
+    
+    # Attempt to write the snapshot to out.txt using a global lock
+    with print_snapshot_lock:
+        with open("out.txt", "a") as out_file:
+            out_file.writelines(snapshot_lines)

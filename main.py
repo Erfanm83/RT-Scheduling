@@ -18,7 +18,7 @@ job_list_lock = threading.Lock()
 
 def main():
     read_data_from_file()
-    initialize_resource_pool_from_file("in.txt")
+    initialize_resource_pool_from_file("testcase.txt")
     
     # Creating subsystem handler threads
     thread1 = threading.Thread(target=handle_subSystem1, args=(allsubSystemTasks[0], []))

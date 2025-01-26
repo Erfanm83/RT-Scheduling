@@ -1,6 +1,5 @@
 import threading
 import time
-import os
 import json
 from resource_utils import take_resources, return_resources
 
@@ -10,6 +9,7 @@ job_list_file = "./ready_queues/ready_queue1.json"
 # Mutex locks
 wait_queue_lock = threading.Lock()
 job_list_lock = threading.Lock()
+print_snapshot_lock = threading.Lock()
 
 class Job:
     def __init__(self, id ,name, burst_time, resource1, resource2, arrival_time, CPU_dest, **kwargs):
@@ -105,6 +105,13 @@ def handle_subSystem1(tasks, y):
 
         # Process the wait queue and redistribute jobs
         process_wait_queue(wait_queue, [JobList1, JobList2, JobList3], curr_time)
+
+        # Call print_snapshot every iteration
+        core_queues = [JobList1, JobList2, JobList3]
+
+        r1, r2 = take_resources("sub1", 0, 0)
+        resources = [r1, r2]
+        print_snapshot(curr_time, resources, core_queues, wait_queue)
 
         curr_time += 1
 
@@ -316,6 +323,7 @@ def handle_core(core_name, x):
             execute_task(core_name, resources, job_to_process)
         else:
             job_to_process.state = "Waiting"
+            aging(job_to_process)
             wait_queue.append(job_to_process)
             print(f"Job {job_to_process.name} is waiting for resources.")
             # Write to a txt file when a process enters the wait queue
@@ -489,8 +497,6 @@ def check_resource(resources, job_to_process):
 def execute_task(core_name, resources, job_to_process):
     '''
     execute task on core and print snapShot of system
-
-    print_snapshot()
     '''
     resources[0] += job_to_process.resource1
     resources[1] += job_to_process.resource2
@@ -519,3 +525,44 @@ def handle_wait_queue(wait_queue, currTime):
             wait_queue.remove(job)
     
     return top_three
+
+def print_snapshot(curr_time, resources, core_queues, wait_queue):
+    """
+    Print the current state of subsystem1 to the out.txt file.
+    Format:
+    Time = <curr_time>
+    Resources: R1: <r1> R2: <r2>
+    Waiting Queue: [<waiting tasks>]
+    Core1:
+        Running Task: <task>
+        Ready Queue: [<ready tasks>]
+    ...
+    """
+    # Generate the formatted snapshot string
+    snapshot_lines = [f"Time = {curr_time}\n", "\nSub1:\n"]
+    snapshot_lines.append(f"\tResources: R1: {resources[0]} R2: {resources[1]}\n")
+    snapshot_lines.append(f"\tWaiting Queue: {wait_queue}\n")
+    
+    for i, core_queue in enumerate(core_queues, start=1):
+        running_task = core_queue[0].name if core_queue else "None"
+        ready_queue = [job.name for job in core_queue[1:]]
+        snapshot_lines.append(f"\tCore{i}:\n")
+        snapshot_lines.append(f"\t\tRunning Task: {running_task}\n")
+        snapshot_lines.append(f"\t\tReady Queue: {ready_queue}\n")
+
+    snapshot_lines.append("\n---------------------------------------------------------------------\n")
+    
+    # Attempt to write the snapshot to out.txt using a global lock
+    global print_snapshot_lock
+    with print_snapshot_lock:
+        with open("out.txt", "a") as out_file:
+            out_file.writelines(snapshot_lines)
+
+def aging(job):
+    '''
+    incremented prirority each time it goes to the queue
+
+    '''
+    job.priority += 1
+
+

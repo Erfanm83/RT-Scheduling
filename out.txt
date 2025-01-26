@@ -1,0 +1,100 @@
+Time = 0
+
+Sub3:
+	Resources: R1: 4 R2: 6
+	Job List:
+	Wait Queue:
+
+---------------------------------------------------------------------
+Time = 0
+
+Sub2:
+	Resources: R1: 4 R2: 6
+	Core1:
+		Running Task: None
+		Ready Queue: []
+	Core2:
+		Running Task: None
+		Ready Queue: []
+
+---------------------------------------------------------------------
+Time = 1
+
+Sub2:
+	Resources: R1: 0 R2: 8
+	Core1:
+		Running Task: None
+		Ready Queue: []
+	Core2:
+		Running Task: None
+		Ready Queue: []
+
+---------------------------------------------------------------------
+Time = 1
+
+Sub3:
+	Resources: R1: 2 R2: 7
+	Job List:
+	Wait Queue:
+
+---------------------------------------------------------------------
+Time = 2
+
+Sub2:
+	Resources: R1: 4 R2: 4
+	Core1:
+		Running Task: None
+		Ready Queue: []
+	Core2:
+		Running Task: None
+		Ready Queue: []
+
+---------------------------------------------------------------------
+Time = 2
+
+Sub3:
+	Resources: R1: 4 R2: 6
+	Job List:
+	Wait Queue:
+
+---------------------------------------------------------------------
+Time = 3
+
+Sub2:
+	Resources: R1: 4 R2: 6
+	Core1:
+		Running Task: None
+		Ready Queue: []
+	Core2:
+		Running Task: None
+		Ready Queue: []
+
+---------------------------------------------------------------------
+Time = 3
+
+Sub3:
+	Resources: R1: 4 R2: 40
+	Job List:
+	Wait Queue:
+
+---------------------------------------------------------------------
+Time = 4
+
+Sub2:
+	Resources: R1: 2 R2: 10
+	Core1:
+		Running Task: None
+		Ready Queue: []
+	Core2:
+		Running Task: None
+		Ready Queue: []
+
+---------------------------------------------------------------------
+Time = 4
+
+Sub3:
+	Resources: R1: 4 R2: 40
+	Job List:
+	Wait Queue:
+
+---------------------------------------------------------------------

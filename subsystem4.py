@@ -16,6 +16,8 @@ job_list_lock = threading.Lock()
 
 task_finish = []
 
+output_lock = threading.Lock()
+
 class Job:
     def __init__(self, id, name, burst_time, resource1, resource2, arrival_time, dependencies=None, **kwargs):
         self.id = id
@@ -219,7 +221,7 @@ def handle_core1(resources, stop_event, core_id):
             
 
         write_job_list(fcfsList)
-
+        print_snapshot(current_time, core_id, resources, job_to_process, fcfsList)
         current_time += 1
 
 def write_job_list(job_list):
@@ -281,3 +283,25 @@ def terminate_threads(threads, stop_event):
     stop_event.set()
     for thread in threads:
         thread.join()
+
+
+def print_snapshot(curr_time, core_id, resources, running_task, ready_queue):
+    """
+    Print the current state of SubSystem4 to the output file.
+    """
+    snapshot_lines = [f"Time = {curr_time}\n", "\nSub4:\n"]
+    snapshot_lines.append(f"\tResources: R1: {resources[0]} R2: {resources[1]}\n")
+    snapshot_lines.append(f"\tCore{core_id}:\n")
+    if running_task:
+        snapshot_lines.append(f"\t\tRunning Task: {running_task.name}\n")
+    else:
+        snapshot_lines.append(f"\t\tRunning Task: None\n")
+    snapshot_lines.append("\t\tReady Queue:\n")
+    for job in ready_queue:
+        snapshot_lines.append(f"\t\t\t{job.name}\n")
+    snapshot_lines.append("\n---------------------------------------------------------------------\n")
+
+    # Write the snapshot to the output file, ensuring exclusive access
+    with output_lock:
+        with open("out.txt", "a") as out_file:
+            out_file.writelines(snapshot_lines)

@@ -10,6 +10,7 @@ output_file = "out.txt"
 # Mutex locks
 wait_queue_lock = threading.Lock()
 job_list_lock = threading.Lock()
+print_snapshot_lock = threading.Lock()  # Add a global lock for file writing
 
 class Job:
     def __init__(self, id, name, burst_time, resource1, resource2, arrival_time, period, repetition, deadline, **kwargs):
@@ -55,6 +56,10 @@ def handle_subSystem3(tasks, y):
         JobList.append(t.split(' '))
 
     isschedulable, rm_schedule = rate_monotonic(JobList)
+    current_time = 0
+    job_list = []  # Placeholder for actual job list logic
+    wait_queue = []  # Placeholder for actual wait queue logic
+    resources = [0, 0]  # Placeholder for current resource levels
 
     while not len(rm_schedule) == 0:
         if rm_schedule:
@@ -75,29 +80,30 @@ def handle_subSystem3(tasks, y):
         resources = [r1, r2]
         # Case 1: Schedulable and have resource 
         if isschedulable and check_resource(resources, job_to_process):
-            print("1")
+            # print("1")
             execute_task(resources, job_to_process)
             # run_and_print_snapshot(resources, job_to_process, current_time)
         # Case 2: Not schedulable and have resource
         elif not isschedulable and check_resource(resources, job_to_process):
-            print("2")
+            # print("2")
             if borrow_and_run(resources, job_to_process, only_borrow_one=True):
                 execute_task(resources, job_to_process)
                 # run_and_print_snapshot(resources, job_to_process, current_time)
         # Case 3: Not schedulable and not have resource
         elif not isschedulable and not check_resource(resources, job_to_process):
-            print("3")
+            # print("3")
             execute_task(resources, job_to_process)
             if borrow_and_run(resources, job_to_process, only_borrow_one=False):
                 execute_task(resources, job_to_process)
                 # run_and_print_snapshot(resources, job_to_process, current_time)
         # Case 4: Schedulable and not have resource
         elif isschedulable and not check_resource(resources, job_to_process):
-            print("4")
+            # print("4")
             if borrow_and_run(resources, job_to_process, only_borrow_one=False):
                 execute_task(resources, job_to_process)
                 # run_and_print_snapshot(resources, job_to_process, current_time)
-
+                
+        print_snapshot(current_time, resources, job_list, wait_queue)
         return_resources("sub3", r1, r2)
         current_time += 1
 
@@ -320,14 +326,30 @@ def execute_task(resources, job_to_process):
     resources[0] += int(job_to_process[2])
     resources[1] += int(job_to_process[3])
 
-def print_snapshot(curr_time, job_list, wait_queue):
-    '''
-    Print snapshot of the system's state.
-    '''
-    print(f"Time: {curr_time}")
-    print("Job List:")
+def print_snapshot(curr_time, resources, job_list, wait_queue):
+    """
+    Print the current state of subsystem3 to the output file.
+    Format:
+    Time = <curr_time>
+    Sub3:
+        Resources: R1: <r1> R2: <r2>
+        Job List:
+        [<job1>, <job2>, ...]
+        Wait Queue:
+        [<wait1>, <wait2>, ...]
+    """
+    # Generate the formatted snapshot string
+    snapshot_lines = [f"Time = {curr_time}\n", "\nSub3:\n"]
+    snapshot_lines.append(f"\tResources: R1: {resources[0]} R2: {resources[1]}\n")
+    snapshot_lines.append("\tJob List:\n")
     for job in job_list:
-        print(job)
-    print("Wait Queue:")
+        snapshot_lines.append(f"\t\t{job}\n")
+    snapshot_lines.append("\tWait Queue:\n")
     for job in wait_queue:
-        print(job)
+        snapshot_lines.append(f"\t\t{job}\n")
+    snapshot_lines.append("\n---------------------------------------------------------------------\n")
+    
+    # Attempt to write the snapshot to out.txt using a global lock
+    with print_snapshot_lock:
+        with open(output_file, "a") as out_file:
+            out_file.writelines(snapshot_lines)
